@@ -5,9 +5,9 @@
         "psr/http-message": "1.0.*@dev"
     },
     "autoload" : {
-        "psr4": {
-            "Fusion\\Http": "/src",
-            "Fusion\\Http\\Test": "/test"
+        "psr-4": {
+            "Fusion\\Http": "src/",
+            "Fusion\\Http\\Test": "test/"
         }
     }
 }
