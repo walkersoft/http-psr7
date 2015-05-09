@@ -6,8 +6,8 @@
     },
     "autoload" : {
         "psr-4": {
-            "Fusion\\Http": "src/",
-            "Fusion\\Http\\Test": "test/"
+            "Fusion\\Http\\": "src/",
+            "Fusion\\Http\\Test\\": "test/"
         }
     }
 }

@@ -46,6 +46,7 @@ class Message implements MessageInterface
     public function withProtocolVersion($version)
     {
         // TODO: Implement withProtocolVersion() method.
+        return $this;
     }
 
     /**
@@ -152,6 +153,7 @@ class Message implements MessageInterface
     public function withHeader($name, $value)
     {
         // TODO: Implement withHeader() method.
+        return $this;
     }
 
     /**
@@ -173,6 +175,7 @@ class Message implements MessageInterface
     public function withAddedHeader($name, $value)
     {
         // TODO: Implement withAddedHeader() method.
+        return $this;
     }
 
     /**
@@ -190,6 +193,7 @@ class Message implements MessageInterface
     public function withoutHeader($name)
     {
         // TODO: Implement withoutHeader() method.
+        return $this;
     }
 
     /**
@@ -218,5 +222,6 @@ class Message implements MessageInterface
     public function withBody(StreamInterface $body)
     {
         // TODO: Implement withBody() method.
+        return $this;
     }
 }
