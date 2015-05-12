@@ -28,7 +28,7 @@ class Message implements MessageInterface
     /**
      * Array of real message headers, i.e. As they were given.
      *
-     *@var array
+     * @var array
      */
     protected $realHeaders = [];
 
@@ -118,7 +118,7 @@ class Message implements MessageInterface
      */
     public function hasHeader($name)
     {
-        return array_key_exists(strtolower($name), $this->headers);
+        return isset($this->headers[strtolower($name)]);
     }
 
     /**
@@ -137,7 +137,7 @@ class Message implements MessageInterface
      */
     public function getHeader($name)
     {
-        if($this->hasHeader($name))
+        if ($this->hasHeader($name))
         {
             return $this->realHeaders[$this->headers[strtolower($name)]];
         }
@@ -165,7 +165,7 @@ class Message implements MessageInterface
      */
     public function getHeaderLine($name)
     {
-        if($this->hasHeader($name))
+        if ($this->hasHeader($name))
         {
             return implode(',', $this->realHeaders[$this->headers[strtolower($name)]]);
         }
@@ -189,14 +189,24 @@ class Message implements MessageInterface
      */
     public function withHeader($name, $value)
     {
-        if(!is_string($name))
+        //Check the data
+        if (!$this->verifyValidHeaderEntry($name, $value))
         {
-            $message = sprintf("HTTP message header name must be a string - %s given", gettype($name));
+            $message = "HTTP header MUST be a string - %s given. ";
+            $message .= "HTTP header values MUST be a string or an array of strings - %s given.";
+            $message = sprintf($message, gettype($name), gettype($value));
             throw new InvalidArgumentException($message);
         }
-        else
+
+        //Integrity checks on the data passed, add the header to the mix.
+        if (is_string($value))
         {
+            $value = [$value];
         }
+
+        $clone = clone $this;
+        $clone->realHeaders[$name] = $value;
+        $clone->headers[strtolower($name)] = $name;
         return $clone;
     }
 
@@ -218,7 +228,24 @@ class Message implements MessageInterface
      */
     public function withAddedHeader($name, $value)
     {
-        // TODO: Implement withAddedHeader() method.
+        //Check the data
+        if (!$this->verifyValidHeaderEntry($name, $value))
+        {
+            $message = "HTTP header MUST be a string - %s given. ";
+            $message .= "HTTP header values MUST be a string or an array of strings - %s given.";
+            $message = sprintf($message, gettype($name), gettype($value));
+            throw new InvalidArgumentException($message);
+        }
+
+        //See if the header exists, if not create it.
+        if (!isset($this->realHeaders[$name]))
+        {
+            return $this->withHeader($name, $value);
+        }
+
+        //The values are good, merge the values in with the current set.
+        $clone = clone $this;
+        $clone->realHeaders[$name] = array_merge($clone->realHeaders[$name], $value);
         return $clone;
     }
 
@@ -236,7 +263,13 @@ class Message implements MessageInterface
      */
     public function withoutHeader($name)
     {
-        // TODO: Implement withoutHeader() method.
+        if (!$this->hasHeader($name))
+        {
+            return $this;
+        }
+        $clone = clone $this;
+        unset($clone->realHeaders[$name]);
+        unset($clone->headers[strtolower($name)]);
         return $clone;
     }
 
@@ -247,7 +280,7 @@ class Message implements MessageInterface
      */
     public function getBody()
     {
-        // TODO: Implement getBody() method.
+        return $this->httpBody;
     }
 
     /**
@@ -265,7 +298,81 @@ class Message implements MessageInterface
      */
     public function withBody(StreamInterface $body)
     {
-        // TODO: Implement withBody() method.
+        $clone = clone $this;
+        $clone->httpBody = $body;
         return $clone;
+    }
+
+    /**
+     * Checks if an array contains only strings.
+     *
+     * Scans an array to confirm that all elements contains only strings.
+     * Returns true if only strings exists or false otherwise.
+     *
+     * @param array $input The input array to verify.
+     * @return bool
+     */
+    protected function verifyStringOnlyArray(array $input)
+    {
+        foreach ($input as $element)
+        {
+            if (!is_string($element))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Checks if a header name is valid.
+     *
+     * Header values MUST be presented as a string.  Returns true if the
+     * header name is valid or false otherwise.
+     *
+     * @param string $name The header name to check.
+     * @return bool
+     */
+    protected function verifyValidHeaderName($name)
+    {
+        return is_string($name);
+    }
+
+    /**
+     * Checks if a header value is valid.
+     *
+     * Header values MUST presented as a string or an array of strings. Returns
+     * true if the header value is valid or false otherwise.
+     *
+     * @param string $value The header value to verify.
+     * @return bool
+     */
+    protected function verifyValidHeaderValue($value)
+    {
+        if (!is_string($value) && !is_array($value))
+        {
+            return false;
+        }
+        if (is_array($value) && !$this->verifyStringOnlyArray($value))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Helper function to check valid header and value in one go.
+     *
+     * Encapsulates the verifyValidHeaderName() and verifyValidHeaderValue()
+     * into a single function call.  Returns true if both pieces of information
+     * are valid or false otherwise.
+     *
+     * @param string $name The header name to verify.
+     * @param string|string[] $value The header value(s) to verify.
+     * @return bool
+     */
+    protected function verifyValidHeaderEntry($name, $value)
+    {
+        return ($this->verifyValidHeaderName($name) && $this->verifyValidHeaderValue($value));
     }
 }
