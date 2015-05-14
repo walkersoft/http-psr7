@@ -14,6 +14,62 @@ class Uri implements UriInterface
 {
 
     /**
+     * URI scheme; e.g. http or https
+     *
+     * @var string
+     */
+    private $uriScheme = '';
+
+    /**
+     * URI authority; e.g. example.org, foo@example.org, foo:bar@example.org:8080
+     *
+     * @var string
+     */
+    private $uriAuthority = '';
+
+    /**
+     * URI user info; e.g. foo or foo:bar
+     *
+     * @var string
+     */
+    private $uriUserInfo = '';
+
+    /**
+     * URI host; e.g. example.org
+     *
+     * @var string
+     */
+    private $uriHost = '';
+
+    /**
+     * URI port; e.g. 80, 443, etc.
+     *
+     * @var int
+     */
+    private $uriPort = null;
+
+    /**
+     * URI path; e.g. /, index.php, /route/to/resource, etc.
+     *
+     * @var string
+     */
+    private $uriPath = '';
+
+    /**
+     * URI query, segement after a '?'; e.g. foo=bar, target=user&id=55, etc.
+     *
+     * @var string
+     */
+    private $uriQuery = '';
+
+    /**
+     * URI fragment, segment after a '#'; e.g. top, title, etc.
+     *
+     * @var string
+     */
+    private $uriFragment = '';
+
+    /**
      * Retrieve the scheme component of the URI.
      *
      * If no scheme is present, this method MUST return an empty string.
