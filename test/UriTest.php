@@ -19,7 +19,7 @@ class UriTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->uri = new Uri();
+        $this->uri = new Uri($this->testUrl);
     }
 
     public function tearDown()
