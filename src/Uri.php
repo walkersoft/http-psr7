@@ -70,6 +70,16 @@ class Uri implements UriInterface
     private $uriFragment = '';
 
     /**
+     * Array of supported URI schemes.
+     *
+     * @var array;
+     */
+    private $supportedSchemes = [
+        'http' => 80,
+        'https' => 443
+    ];
+
+    /**
      * Retrieve the scheme component of the URI.
      *
      * If no scheme is present, this method MUST return an empty string.
@@ -85,7 +95,7 @@ class Uri implements UriInterface
      */
     public function getScheme()
     {
-        // TODO: Implement getScheme() method.
+        return $this->uriScheme;
     }
 
     /**
@@ -108,7 +118,25 @@ class Uri implements UriInterface
      */
     public function getAuthority()
     {
-        // TODO: Implement getAuthority() method.
+        $host = $this->getHost();
+        if (empty($host))
+        {
+            return '';
+        }
+
+        $userInfo = $this->getUserInfo();
+        $port = $this->getPort();
+
+        if (!empty($userInfo))
+        {
+            $userInfo .= "@";
+        }
+        if ($port != null)
+        {
+            $port = ':' . $port;
+        }
+
+        return sprintf('%s%s%s', $userInfo, $host, $port);
     }
 
     /**
@@ -128,7 +156,7 @@ class Uri implements UriInterface
      */
     public function getUserInfo()
     {
-        // TODO: Implement getUserInfo() method.
+        return $this->uriUserInfo;
     }
 
     /**
@@ -144,7 +172,7 @@ class Uri implements UriInterface
      */
     public function getHost()
     {
-        // TODO: Implement getHost() method.
+        return $this->uriHost;
     }
 
     /**
@@ -164,7 +192,11 @@ class Uri implements UriInterface
      */
     public function getPort()
     {
-        // TODO: Implement getPort() method.
+        if ($this->isStandardPort())
+        {
+            return null;
+        }
+        return $this->uriPort;
     }
 
     /**
@@ -413,5 +445,25 @@ class Uri implements UriInterface
     public function __toString()
     {
         // TODO: Implement __toString() method.
+    }
+
+    /**
+     * Indicates if current port is the standard port for the current scheme.
+     *
+     * @return bool Returns true if the current port is the standard port for the
+     *      current port or false otherwise.
+     */
+    private function isStandardPort()
+    {
+        if ($this->uriPort == null || $this->getScheme() == null)
+        {
+            return false;
+        }
+        if ($this->uriPort == $this->supportedSchemes[$this->getScheme()])
+        {
+            return true;
+        }
+
+        return false;
     }
 }
