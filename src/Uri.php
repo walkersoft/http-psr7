@@ -72,12 +72,40 @@ class Uri implements UriInterface
     /**
      * Array of supported URI schemes.
      *
-     * @var array;
+     * @var array
      */
     private $supportedSchemes = [
         'http' => 80,
         'https' => 443
     ];
+
+    /**
+     * Regex to identify general delimiters. Part of the URI reserved characters.
+     *
+     * @var string
+     */
+    const REGEX_GEN_DELIMITERS = ':@#\/\?\[\]';
+
+    /**
+     * Regex to identify sub-delimiters. Part of the URI reserved characters.
+     *
+     * @var string
+     */
+    const REGEX_SUB_DELIMITERS = '!&,:=\$\'\*\(\)\+';
+
+    /**
+     * Regex to identify unreserved characters.
+     *
+     * @var string
+     */
+    const REGEX_UNRESERVED = 'a-zA-Z0-9_~\-\.';
+
+    /**
+     * Regex to identify percent encoded characters.
+     *
+     * @var string
+     */
+    const REGEX_PERCENT_ENCODED = '%(?![a-fA-F0-9]{2})';
 
     /**
      * Retrieve the scheme component of the URI.
@@ -119,6 +147,7 @@ class Uri implements UriInterface
     public function getAuthority()
     {
         $host = $this->getHost();
+
         if (empty($host))
         {
             return '';
@@ -131,7 +160,7 @@ class Uri implements UriInterface
         {
             $userInfo .= "@";
         }
-        if ($port != null)
+        if ($port !== null)
         {
             $port = ':' . $port;
         }
@@ -226,7 +255,7 @@ class Uri implements UriInterface
      */
     public function getPath()
     {
-        // TODO: Implement getPath() method.
+        return $this->uriPath;
     }
 
     /**
@@ -251,7 +280,7 @@ class Uri implements UriInterface
      */
     public function getQuery()
     {
-        // TODO: Implement getQuery() method.
+        return $this->uriQuery;
     }
 
     /**
@@ -272,7 +301,7 @@ class Uri implements UriInterface
      */
     public function getFragment()
     {
-        // TODO: Implement getFragment() method.
+        return $this->uriFragment;
     }
 
     /**
@@ -447,6 +476,16 @@ class Uri implements UriInterface
         // TODO: Implement __toString() method.
     }
 
+    private function parse($uri)
+    {
+        $pieces = parse_url($uri);
+
+        if ($pieces !== false)
+        {
+
+        }
+    }
+
     /**
      * Indicates if current port is the standard port for the current scheme.
      *
@@ -459,11 +498,121 @@ class Uri implements UriInterface
         {
             return false;
         }
+
         if ($this->uriPort == $this->supportedSchemes[$this->getScheme()])
         {
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Percent-encode the query segment of the URI.
+     *
+     * @param string $query The query to percent-encode.
+     * @return string The percent-encoded query.
+     */
+    private function encodeQuery($query)
+    {
+        //@formatter:off
+        $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@\/\?]+|' .
+                 self::REGEX_PERCENT_ENCODED . ')/';
+
+        return preg_replace_callback($regex, [$this, 'encodeChar'], $query);
+        //@formatter:on
+    }
+
+    /**
+     * Encoding callback to transform characters into percent-encoded form.
+     *
+     * @param array $matches An array with a matched character from the regex.
+     * @return string The percent-encoded value;
+     */
+    private function encodeChar(array $matches)
+    {
+        return rawurlencode($matches[0]);
+    }
+
+    /**
+     * Percent-encode the fragment segment of the URI.
+     *
+     * This method serves as an alias to the `self::encodeQuery()` method since
+     * the same rules apply to query strings and fragments.
+     *
+     * @param string $fragment The fragment to percent-encode.
+     * @return string The percent-encoded fragment.
+     */
+    private function encodeFragment($fragment)
+    {
+        return $this->encodeQuery($fragment);
+    }
+
+    /**
+     * Filters and normalizes the input scheme.
+     *
+     * @param string $scheme The scheme to filter.
+     * @return string The filtered scheme.
+     */
+    private function filterScheme($scheme)
+    {
+        $filtered = '';
+
+        if (!empty($scheme))
+        {
+            $filtered = preg_replace('/:(\/\/)?/', '', $scheme);
+        }
+
+        $filtered = strtolower($filtered);
+
+        return $filtered;
+    }
+
+    /**
+     * Filters the query string and percent-encodes the contents.
+     *
+     * @param string $query The query to filter.
+     * @return string The filtered/encoded query string.
+     */
+    private function filterQuery($query)
+    {
+        $filtered = '';
+
+        if (!empty($query))
+        {
+            $query = (strpos($query, '?') === 1) ? substr($query, 1) : $query;
+            $sets = explode('&', $query);
+
+            if (empty($sets) || count($sets) === 1)
+            {
+                $filtered = $query;
+            }
+            else
+            {
+                $rebuilt = [];
+                $i = 0;
+
+                while ($i < count($sets))
+                {
+                    $pair = explode('=', $sets[$i], 2);
+                    if (count($pair) === 1)
+                    {
+                        $pair[] = null;
+                    }
+
+                    //@formatter:off
+                    array_walk($pair, [$this, 'encodeQuery']);
+                    //@formatter:on
+
+                    $rebuilt[] = implode('=', $pair);
+                    ++$i;
+                }
+
+                $filtered = implode('&', $rebuilt);
+            }
+
+        }
+
+        return $filtered;
     }
 }
