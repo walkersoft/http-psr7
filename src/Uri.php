@@ -515,12 +515,10 @@ class Uri implements UriInterface
      */
     private function encodeQuery($query)
     {
-        //@formatter:off
         $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@\/\?]+|' .
                  self::REGEX_PERCENT_ENCODED . ')/';
 
         return preg_replace_callback($regex, [$this, 'encodeChar'], $query);
-        //@formatter:on
     }
 
     /**
@@ -582,8 +580,9 @@ class Uri implements UriInterface
         {
             $query = (strpos($query, '?') === 1) ? substr($query, 1) : $query;
             $sets = explode('&', $query);
+            $count = count($sets);
 
-            if (empty($sets) || count($sets) === 1)
+            if (empty($sets) || $count === 1)
             {
                 $filtered = $query;
             }
@@ -592,7 +591,7 @@ class Uri implements UriInterface
                 $rebuilt = [];
                 $i = 0;
 
-                while ($i < count($sets))
+                while ($i < $count)
                 {
                     $pair = explode('=', $sets[$i], 2);
                     if (count($pair) === 1)
@@ -600,9 +599,7 @@ class Uri implements UriInterface
                         $pair[] = null;
                     }
 
-                    //@formatter:off
                     array_walk($pair, [$this, 'encodeQuery']);
-                    //@formatter:on
 
                     $rebuilt[] = implode('=', $pair);
                     ++$i;
