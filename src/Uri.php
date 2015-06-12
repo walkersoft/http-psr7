@@ -476,13 +476,41 @@ class Uri implements UriInterface
         // TODO: Implement __toString() method.
     }
 
+    /**
+     * Parses the URI and populates this classes properties with the information.
+     *
+     * @param string $uri
+     */
     private function parse($uri)
     {
         $pieces = parse_url($uri);
 
         if ($pieces !== false)
         {
-
+            $this->uriScheme = (isset($pieces['scheme']))
+                ? $this->filterScheme($pieces['scheme'])
+                : '';
+            $this->uriHost = (isset($pieces['host']))
+                ? $pieces['host']
+                : '';
+            $this->uriPort = (isset($pieces['port']))
+                ? $this->filterPort($pieces['port'])
+                : null;
+            $this->uriPath = (isset($pieces['path']))
+                ? $this->filterPath($pieces['path'])
+                : '';
+            $this->uriQuery = (isset($pieces['query']))
+                ? $this->filterQuery($pieces['query'])
+                : '';
+            $this->uriFragment = (isset($pieces['fragment']))
+                ? $this->filterFragment($pieces['fragment'])
+                : '';
+            $this->uriUserInfo = (isset($pieces['user']))
+                ? $pieces['user']
+                : '';
+            $this->uriUserInfo .= (isset($pieces['pass']))
+                ? ':' . $pieces['pass']
+                : '';
         }
     }
 
@@ -516,7 +544,7 @@ class Uri implements UriInterface
     private function encodeQuery($query)
     {
         $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@\/\?]+|' .
-                 self::REGEX_PERCENT_ENCODED . ')/';
+            self::REGEX_PERCENT_ENCODED . ')/';
 
         return preg_replace_callback($regex, [$this, 'encodeChar'], $query);
     }
@@ -541,7 +569,7 @@ class Uri implements UriInterface
      * @param string $fragment The fragment to percent-encode.
      * @return string The percent-encoded fragment.
      */
-    private function encodeFragment($fragment)
+    private function filterFragment($fragment)
     {
         return $this->encodeQuery($fragment);
     }
@@ -611,5 +639,27 @@ class Uri implements UriInterface
         }
 
         return $filtered;
+    }
+
+    /**
+     * Filters the path and encodes the appropriate characters.
+     *
+     * @param string $path The path the filter.
+     * @return string The filtered string.
+     */
+    public function filterPath($path)
+    {
+        return '';
+    }
+
+    /**
+     * Filters and validates a port number.
+     *
+     * @param int $port The port number to filter.
+     * @return int The filtered port number.
+     */
+    public function filterPort($port)
+    {
+
     }
 }
