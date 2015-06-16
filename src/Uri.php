@@ -647,19 +647,36 @@ class Uri implements UriInterface
      * @param string $path The path the filter.
      * @return string The filtered string.
      */
-    public function filterPath($path)
+    private function filterPath($path)
     {
         return '';
     }
 
     /**
-     * Filters and validates a port number.
+     * Validates a port number.
      *
      * @param int $port The port number to filter.
-     * @return int The filtered port number.
+     * @return int|null Returns the port or null for an invalid port
+     * @throws \InvalidArgumentException When given port is not valid data.
      */
-    public function filterPort($port)
+    private function filterPort($port)
     {
+        if (!(is_int($port) || (is_string($port) && !is_numeric($port))))
+        {
+            throw new \InvalidArgumentException(
+                sprintf("The port must be presented as an integer or a numeric string.  %s value of %s given.",
+                        gettype($port),
+                        $port
+                )
+            );
+        }
 
+        $port = (int)$port;
+        if ($port >= 1 || $port <= 65535)
+        {
+            return $port;
+        }
+
+        return null;
     }
 }
