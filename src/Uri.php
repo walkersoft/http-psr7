@@ -108,6 +108,25 @@ class Uri implements UriInterface
     const REGEX_PERCENT_ENCODED = '%(?![a-fA-F0-9]{2})';
 
     /**
+     * Constructor.
+     *
+     * Take a given URI and parses it.
+     *
+     * @param string $uri The input URI to parse.
+     */
+    public function __construct($uri)
+    {
+        if (!is_string($uri))
+        {
+            throw new \InvalidArgumentException(
+                sprintf('Invalid URI. The URI must be a string. %s given.', gettype($uri))
+            );
+        }
+
+        $this->parse($uri);
+    }
+
+    /**
      * Retrieve the scheme component of the URI.
      *
      * If no scheme is present, this method MUST return an empty string.
@@ -473,7 +492,50 @@ class Uri implements UriInterface
      */
     public function __toString()
     {
-        // TODO: Implement __toString() method.
+        return $this->make();
+    }
+
+    /**
+     * Makes a percent-encoded representation of this URI instance.
+     *
+     * @return string The percent-encoded URI.
+     */
+    public function make()
+    {
+        $uri = '';
+
+        //Add scheme
+        if (!empty($this->uriScheme))
+        {
+            $uri .= sprintf('%s:', $this->uriScheme);
+        }
+
+        //Add authority
+        $authority = $this->getAuthority();
+        if (!empty($authority))
+        {
+            $uri .= sprintf('//%s', $authority);
+        }
+
+        //Add path
+        if (!empty($this->uriPath))
+        {
+            $uri .= $this->uriPath;
+        }
+
+        //Add query
+        if (!empty($this->uriQuery))
+        {
+            $uri .= sprintf('?%s', $this->uriQuery);
+        }
+
+        //Add fragment
+        if (!empty($this->uriFragment))
+        {
+            $uri .= sprintf('#%s', $this->uriFragment);
+        }
+
+        return $uri;
     }
 
     /**
@@ -543,7 +605,7 @@ class Uri implements UriInterface
      */
     private function encodeQuery($query)
     {
-        $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@\/\?]+|' .
+        $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@\/]+|' .
             self::REGEX_PERCENT_ENCODED . ')/';
 
         return preg_replace_callback($regex, [$this, 'encodeChar'], $query);
@@ -606,7 +668,7 @@ class Uri implements UriInterface
 
         if (!empty($query))
         {
-            $query = (strpos($query, '?') === 1) ? substr($query, 1) : $query;
+            $query = (strpos($query, '?') === 0) ? substr($query, 1) : $query;
             $sets = explode('&', $query);
             $count = count($sets);
 
@@ -649,7 +711,7 @@ class Uri implements UriInterface
      */
     private function filterPath($path)
     {
-        return '';
+        return $this->encodeQuery($path);
     }
 
     /**
