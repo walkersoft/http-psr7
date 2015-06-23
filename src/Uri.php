@@ -179,7 +179,7 @@ class Uri implements UriInterface
         {
             $userInfo .= "@";
         }
-        if ($port !== null)
+        if ($port !== null && $this->isStandardPort() === false)
         {
             $port = ':' . $port;
         }
@@ -398,7 +398,16 @@ class Uri implements UriInterface
      */
     public function withPort($port)
     {
-        // TODO: Implement withPort() method.
+        if ($this->filterPort($port) === null)
+        {
+            //Nothing to change so return the current instance
+            return $this;
+        }
+
+        $clone = clone $this;
+        $clone->uriPort = $port;
+
+        return $clone;
     }
 
     /**
