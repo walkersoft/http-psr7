@@ -91,7 +91,7 @@ class Uri implements UriInterface
      *
      * @var string
      */
-    const REGEX_SUB_DELIMITERS = '!&,:=\$\'\*\(\)\+';
+    const REGEX_SUB_DELIMITERS = '!&,;=\$\'\*\(\)\+';
 
     /**
      * Regex to identify unreserved characters.
@@ -614,10 +614,24 @@ class Uri implements UriInterface
      */
     private function encodeQuery($query)
     {
-        $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@\/]+|' .
+        $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@\/\?]+|' .
             self::REGEX_PERCENT_ENCODED . ')/';
 
         return preg_replace_callback($regex, [$this, 'encodeChar'], $query);
+    }
+
+    /**
+     * Percent-encode a path segment based on RFC 3986.
+     *
+     * @param string $segment The segment to percent-encode.
+     * @return string The percent-encoded segment.
+     */
+    private function encodeSegment($segment)
+    {
+        $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@]+|' .
+            self::REGEX_PERCENT_ENCODED . ')/';
+
+        return preg_replace_callback($regex, [$this, 'encodeChar'], $segment);
     }
 
     /**
@@ -720,7 +734,13 @@ class Uri implements UriInterface
      */
     private function filterPath($path)
     {
-        return $this->encodeQuery($path);
+        $segments = explode('/', $path);
+        for($i = 0; $i < count($segments); $i++)
+        {
+            $segments[$i] = $this->encodeSegment($segments[$i]);
+        }
+
+        return implode('/', $segments);
     }
 
     /**
