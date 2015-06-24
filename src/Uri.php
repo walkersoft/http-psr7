@@ -340,7 +340,26 @@ class Uri implements UriInterface
      */
     public function withScheme($scheme)
     {
-        // TODO: Implement withScheme() method.
+        if (!is_string($scheme))
+        {
+            throw new \InvalidArgumentException(
+                sprintf('The scheme must be presented as a string. %s given.', gettype($scheme))
+            );
+        }
+
+        $scheme = $this->filterScheme($scheme);
+
+        if (!in_array($scheme, $this->supportedSchemes))
+        {
+            throw new \InvalidArgumentException(
+                sprintf('The scheme provided: %s is not supported by this implementation', $scheme)
+            );
+        }
+
+        $clone = clone $this;
+        $clone->uriScheme = $scheme;
+
+        return $clone;
     }
 
     /**
@@ -400,8 +419,7 @@ class Uri implements UriInterface
     {
         if ($this->filterPort($port) === null)
         {
-            //Nothing to change so return the current instance
-            return $this;
+            return clone $this;
         }
 
         $clone = clone $this;
@@ -667,16 +685,14 @@ class Uri implements UriInterface
      */
     private function filterScheme($scheme)
     {
-        $filtered = '';
-
         if (!empty($scheme))
         {
-            $filtered = preg_replace('/:(\/\/)?/', '', $scheme);
+            $scheme = preg_replace('/:(\/\/)?/', '', $scheme);
         }
 
-        $filtered = strtolower($filtered);
+        $scheme = strtolower($scheme);
 
-        return $filtered;
+        return $scheme;
     }
 
     /**
@@ -735,7 +751,7 @@ class Uri implements UriInterface
     private function filterPath($path)
     {
         $segments = explode('/', $path);
-        for($i = 0; $i < count($segments); $i++)
+        for ($i = 0; $i < count($segments); $i++)
         {
             $segments[$i] = $this->encodeSegment($segments[$i]);
         }
