@@ -349,7 +349,7 @@ class Uri implements UriInterface
 
         $scheme = $this->filterScheme($scheme);
 
-        if (!in_array($scheme, $this->supportedSchemes))
+        if (!array_key_exists($scheme, $this->supportedSchemes))
         {
             throw new \InvalidArgumentException(
                 sprintf('The scheme provided: %s is not supported by this implementation', $scheme)
@@ -378,7 +378,16 @@ class Uri implements UriInterface
      */
     public function withUserInfo($user, $password = null)
     {
-        // TODO: Implement withUserInfo() method.
+        $user = (string)$user;
+
+        if (!empty($user) && (is_string($password) && !empty($password)))
+        {
+            $user .= ':' . $password;
+        }
+
+        $clone = clone $this;
+        $clone->uriUserInfo = $user;
+        return $clone;
     }
 
     /**

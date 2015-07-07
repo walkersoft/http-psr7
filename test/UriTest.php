@@ -53,6 +53,13 @@ class UriTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('example.org', $this->uri->getHost());
     }
 
+    public function testGettingStandardPort()
+    {
+        $this->uri = new Uri('https://www.example.org');
+        $uri = $this->uri->withPort(443);
+        $this->assertNull($uri->getPort());
+    }
+
     public function testGettingNonStandardPort()
     {
         $this->uri = new Uri($this->testUrl);
@@ -77,10 +84,49 @@ class UriTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('fragmerunning', $this->uri->getFragment());
     }
 
-    public function testGettingPort()
+    public function testChangingScheme()
     {
-        $this->uri = new Uri('https://www.example.org');
-        $uri = $this->uri->withPort(443);
-        $this->assertNull($uri->getPort());
+        $this->uri = new Uri($this->testUrl);
+        $uri = $this->uri->withScheme('https');
+        $this->assertNotSame($uri, $this->uri);
+        $this->assertEquals('http', $this->uri->getScheme());
+        $this->assertEquals('https', $uri->getScheme());
     }
+
+    public function testChangingUserInfo()
+    {
+        $this->uri = new Uri($this->testUrl);
+        $uri = $this->uri->withUserInfo('foo', 'bar');
+        $this->assertNotSame($uri, $this->uri);
+        $this->assertEquals('billybob:foobar', $this->uri->getUserInfo());
+        $this->assertEquals('foo:bar', $uri->getUserInfo());
+    }
+
+    public function testChangingUserWithoutPassword()
+    {
+        $this->uri = new Uri($this->testUrl);
+        $uri = $this->uri->withUserInfo('foo');
+        $this->assertNotSame($uri, $this->uri);
+        $this->assertEquals('billybob:foobar', $this->uri->getUserInfo());
+        $this->assertEquals('foo', $uri->getUserInfo());
+    }
+
+    public function testChangingUserRemovingUserNullValue()
+    {
+        $this->uri = new Uri($this->testUrl);
+        $uri = $this->uri->withUserInfo(null, 'pwWontMakeTheCut');
+        $this->assertNotSame($uri, $this->uri);
+        $this->assertEquals('billybob:foobar', $this->uri->getUserInfo());
+        $this->assertEquals('', $uri->getUserInfo());
+    }
+
+    public function testChangingUserRemovingUserEmptyString()
+    {
+        $this->uri = new Uri($this->testUrl);
+        $uri = $this->uri->withUserInfo('', 'pwWontMakeTheCut');
+        $this->assertNotSame($uri, $this->uri);
+        $this->assertEquals('billybob:foobar', $this->uri->getUserInfo());
+        $this->assertEquals('', $uri->getUserInfo());
+    }
+
 }
