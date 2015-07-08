@@ -19,6 +19,7 @@ class UriTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
+        $this->uri = new Uri($this->testUrl);
     }
 
     public function tearDown()
@@ -31,25 +32,21 @@ class UriTest extends \PHPUnit_Framework_TestCase
 
     public function testGettingScheme()
     {
-        $this->uri = new Uri($this->testUrl);
         $this->assertEquals('http', $this->uri->getScheme());
     }
 
     public function testGettingAuthority()
     {
-        $this->uri = new Uri($this->testUrl);
         $this->assertEquals('billybob:foobar@example.org:8080', $this->uri->getAuthority());
     }
 
     public function testGettingUserInfo()
     {
-        $this->uri = new Uri($this->testUrl);
         $this->assertEquals('billybob:foobar', $this->uri->getUserInfo());
     }
 
     public function testGettingHost()
     {
-        $this->uri = new Uri($this->testUrl);
         $this->assertEquals('example.org', $this->uri->getHost());
     }
 
@@ -62,40 +59,52 @@ class UriTest extends \PHPUnit_Framework_TestCase
 
     public function testGettingNonStandardPort()
     {
-        $this->uri = new Uri($this->testUrl);
         $this->assertEquals(8080, $this->uri->getPort());
     }
 
     public function testGettingPath()
     {
-        $this->uri = new Uri($this->testUrl);
         $this->assertEquals('/resource/target', $this->uri->getPath());
     }
 
     public function testGettingQuery()
     {
-        $this->uri = new Uri($this->testUrl);
         $this->assertEquals('query=blah', $this->uri->getQuery());
     }
 
     public function testGettingFragment()
     {
-        $this->uri = new Uri($this->testUrl);
         $this->assertEquals('fragmerunning', $this->uri->getFragment());
     }
 
     public function testChangingScheme()
     {
-        $this->uri = new Uri($this->testUrl);
         $uri = $this->uri->withScheme('https');
         $this->assertNotSame($uri, $this->uri);
         $this->assertEquals('http', $this->uri->getScheme());
         $this->assertEquals('https', $uri->getScheme());
     }
 
+    /**
+     * @expectedException \InvalidArgumentException
+     * @dataProvider badStringData
+     */
+    public function testChangingSchemeWithBad($data)
+    {
+        $this->uri->withScheme($data);
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @dataProvider badStringData
+     */
+    public function testChangingSchemeWithInvalid($scheme)
+    {
+        $this->uri->withScheme('ftp://');
+    }
+
     public function testChangingUserInfo()
     {
-        $this->uri = new Uri($this->testUrl);
         $uri = $this->uri->withUserInfo('foo', 'bar');
         $this->assertNotSame($uri, $this->uri);
         $this->assertEquals('billybob:foobar', $this->uri->getUserInfo());
@@ -104,7 +113,6 @@ class UriTest extends \PHPUnit_Framework_TestCase
 
     public function testChangingUserWithoutPassword()
     {
-        $this->uri = new Uri($this->testUrl);
         $uri = $this->uri->withUserInfo('foo');
         $this->assertNotSame($uri, $this->uri);
         $this->assertEquals('billybob:foobar', $this->uri->getUserInfo());
@@ -113,7 +121,6 @@ class UriTest extends \PHPUnit_Framework_TestCase
 
     public function testChangingUserRemovingUserNullValue()
     {
-        $this->uri = new Uri($this->testUrl);
         $uri = $this->uri->withUserInfo(null, 'pwWontMakeTheCut');
         $this->assertNotSame($uri, $this->uri);
         $this->assertEquals('billybob:foobar', $this->uri->getUserInfo());
@@ -122,11 +129,48 @@ class UriTest extends \PHPUnit_Framework_TestCase
 
     public function testChangingUserRemovingUserEmptyString()
     {
-        $this->uri = new Uri($this->testUrl);
         $uri = $this->uri->withUserInfo('', 'pwWontMakeTheCut');
         $this->assertNotSame($uri, $this->uri);
         $this->assertEquals('billybob:foobar', $this->uri->getUserInfo());
         $this->assertEquals('', $uri->getUserInfo());
+    }
+
+    public function testChangingHost()
+    {
+        $this->uri = new Uri('http://www.foobar.net');
+        $uri = $this->uri->withHost('www.blazbim.org');
+        $this->assertNotSame($uri, $this->uri);
+        $this->assertEquals('www.foobar.net', $this->uri->getHost());
+        $this->assertEquals('www.blazbim.org', $uri->getHost());
+        $this->assertEquals('http://www.blazbim.org', $uri->make());
+    }
+
+    public function testRemovingHost()
+    {
+        $uri = $this->uri->withHost('');
+        $this->assertNotSame($uri, $this->uri);
+        $this->assertEquals('http:/resource/target?query=blah#fragmerunning', $uri->make());
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @dataProvider badStringData
+     */
+    public function testChangingHostWithBadHost($data)
+    {
+        $this->uri->withHost($data);
+    }
+
+    public function badStringData()
+    {
+        return [
+            [PHP_INT_MAX],
+            [3.14159265359],
+            [[]],
+            [true],
+            [null],
+            [fopen('CrashTestFile.txt', 'r')]
+        ];
     }
 
 }

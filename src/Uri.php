@@ -352,7 +352,7 @@ class Uri implements UriInterface
         if (!array_key_exists($scheme, $this->supportedSchemes))
         {
             throw new \InvalidArgumentException(
-                sprintf('The scheme provided: %s is not supported by this implementation', $scheme)
+                sprintf('The scheme provided: %s is not supported by this implementation.', $scheme)
             );
         }
 
@@ -404,7 +404,17 @@ class Uri implements UriInterface
      */
     public function withHost($host)
     {
-        // TODO: Implement withHost() method.
+        if (!is_string($host))
+        {
+            throw new \InvalidArgumentException(
+                sprintf('The host must be presented as a string. %s given', gettype($host))
+            );
+        }
+
+        $clone = clone $this;
+        $clone->uriHost = $host;
+
+        return $clone;
     }
 
     /**
@@ -556,6 +566,11 @@ class Uri implements UriInterface
         //Add path
         if (!empty($this->uriPath))
         {
+            //Look for a slash before tacking on the path, add one if it is missing
+            if (strrpos($uri, '/') !== (strlen($uri) - 1) && strpos($this->uriPath, '/') !== 0)
+            {
+                $uri .= '/';
+            }
             $uri .= $this->uriPath;
         }
 
@@ -641,7 +656,7 @@ class Uri implements UriInterface
      */
     private function encodeQuery($query)
     {
-        $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@\/\?]+|' .
+        $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@\/\?%]+|' .
             self::REGEX_PERCENT_ENCODED . ')/';
 
         return preg_replace_callback($regex, [$this, 'encodeChar'], $query);
@@ -655,7 +670,7 @@ class Uri implements UriInterface
      */
     private function encodeSegment($segment)
     {
-        $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@]+|' .
+        $regex = '/(?:[^' . self::REGEX_UNRESERVED . self::REGEX_SUB_DELIMITERS . ':@%]+|' .
             self::REGEX_PERCENT_ENCODED . ')/';
 
         return preg_replace_callback($regex, [$this, 'encodeChar'], $segment);
@@ -722,7 +737,7 @@ class Uri implements UriInterface
 
             if (empty($sets) || $count === 1)
             {
-                $filtered = $query;
+                $filtered = $this->encodeQuery($query);
             }
             else
             {
@@ -780,9 +795,10 @@ class Uri implements UriInterface
         if (!(is_int($port) || (is_string($port) && !is_numeric($port))))
         {
             throw new \InvalidArgumentException(
-                sprintf("The port must be presented as an integer or a numeric string.  %s value of %s given.",
-                        gettype($port),
-                        $port
+                sprintf(
+                    "The port must be presented as an integer or a numeric string.  %s value of %s given.",
+                    gettype($port),
+                    $port
                 )
             );
         }
