@@ -438,7 +438,7 @@ class Uri implements UriInterface
     {
         if ($this->filterPort($port) === null)
         {
-            return clone $this;
+            $port = null;
         }
 
         $clone = clone $this;
@@ -471,7 +471,26 @@ class Uri implements UriInterface
      */
     public function withPath($path)
     {
-        // TODO: Implement withPath() method.
+        if (!is_string($path))
+        {
+            throw new \InvalidArgumentException(
+                sprintf('Path information must be presented as a string. %s given.', gettype($path))
+            );
+        }
+
+        if (preg_match('/^[?#]+/', $path) === 1)
+        {
+            throw new \InvalidArgumentException(
+                sprintf('The path data: %s is invalid. The path must not begin with a query (?) delimiter
+                         or fragment (#) delimiter.', $path
+                )
+            );
+        }
+
+        $clone = clone $this;
+        $clone->uriPath = $this->filterPath($path);
+
+        return $clone;
     }
 
     /**
@@ -491,7 +510,20 @@ class Uri implements UriInterface
      */
     public function withQuery($query)
     {
-        // TODO: Implement withQuery() method.
+        if (!is_string($query))
+        {
+            throw new \InvalidArgumentException(
+                sprintf('The query must be presented as a string. %s given.', gettype($query))
+            );
+        }
+
+        //Remove a leading query delimiter (?) is present
+        $query = (strpos($query, '?') === 0) ? substr($query, 1) : $query;
+
+        $clone = clone $this;
+        $clone->uriQuery = $this->filterQuery($query);
+
+        return $clone;
     }
 
     /**
@@ -510,7 +542,20 @@ class Uri implements UriInterface
      */
     public function withFragment($fragment)
     {
-        // TODO: Implement withFragment() method.
+        if (!is_string($fragment))
+        {
+            throw new \InvalidArgumentException(
+                sprintf('The fragment must be presented as a string. %s given.', gettype($fragment))
+            );
+        }
+
+        //Remove a leading query delimiter (?) is present
+        $fragment = (strpos($fragment, '#') === 0) ? substr($fragment, 1) : $fragment;
+
+        $clone = clone $this;
+        $clone->uriFragment = $this->filterFragment($fragment);
+
+        return $clone;
     }
 
     /**
@@ -754,7 +799,7 @@ class Uri implements UriInterface
 
                     array_walk($pair, [$this, 'encodeQuery']);
 
-                    $rebuilt[] = implode('=', $pair);
+                    $rebuilt[] = ($pair[1] === null) ? $pair[0] : implode('=', $pair);
                     ++$i;
                 }
 
@@ -792,19 +837,18 @@ class Uri implements UriInterface
      */
     private function filterPort($port)
     {
-        if (!(is_int($port) || (is_string($port) && !is_numeric($port))))
+        if (!is_int($port))
         {
             throw new \InvalidArgumentException(
                 sprintf(
-                    "The port must be presented as an integer or a numeric string.  %s value of %s given.",
-                    gettype($port),
-                    $port
+                    "The port must be presented as an integer.  %s given.",
+                    gettype($port)
                 )
             );
         }
 
         $port = (int)$port;
-        if ($port >= 1 || $port <= 65535)
+        if ($port > 0 && $port < 65536)
         {
             return $port;
         }
