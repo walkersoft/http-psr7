@@ -15,6 +15,38 @@ class Request extends Message implements RequestInterface
 {
 
     /**
+     * Request target.
+     *
+     * @var string
+     */
+    private $requestTarget = '/';
+
+    /**
+     * Request method (HTTP Verb).
+     *
+     * @var string
+     */
+    private $requestMethod = null;
+
+    /**
+     * Request URI.
+     *
+     * @var UriInterface
+     */
+    private $requestUri = null;
+
+    /**
+     * Constructor.
+     *
+     * Creates a new HTTP request message.
+     *
+     */
+    public function __construct()
+    {
+        // TODO: Figure out all the needed params for a request.
+    }
+
+    /**
      * Retrieves the message's request target.
      *
      * Retrieves the message's request-target either as it will appear (for
@@ -64,7 +96,7 @@ class Request extends Message implements RequestInterface
      */
     public function getMethod()
     {
-        // TODO: Implement getMethod() method.
+        return $this->requestMethod;
     }
 
     /**
@@ -98,7 +130,7 @@ class Request extends Message implements RequestInterface
      */
     public function getUri()
     {
-        // TODO: Implement getUri() method.
+        return $this->requestUri;
     }
 
     /**
