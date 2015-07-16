@@ -19,7 +19,7 @@ class Request extends Message implements RequestInterface
      *
      * @var string
      */
-    private $requestTarget = '/';
+    private $requestTarget = null;
 
     /**
      * Request method (HTTP Verb).
@@ -34,6 +34,22 @@ class Request extends Message implements RequestInterface
      * @var UriInterface
      */
     private $requestUri = null;
+
+    /**
+     * Supported HTTP Verbs.
+     *
+     * @var array
+     */
+    private $supportedMethods = [
+        'GET',
+        'POST',
+        'PUT',
+        'PATCH',
+        'DELETE',
+        'OPTIONS',
+        'HEAD',
+        'TRACE'
+    ];
 
     /**
      * Constructor.
@@ -64,7 +80,23 @@ class Request extends Message implements RequestInterface
      */
     public function getRequestTarget()
     {
-        // TODO: Implement getRequestTarget() method.
+        if ($this->requestTarget !== null && $this->requestTarget == '/')
+        {
+            return $this->requestTarget;
+        }
+
+        $request = $this->requestUri->getPath();
+        if (!empty($this->requestUri->getQuery()))
+        {
+            $request .= sprintf('?%s', $this->requestUri->getQuery());
+        }
+
+        if (empty($request))
+        {
+            $request = '/';
+        }
+
+        return $request;
     }
 
     /**
@@ -86,7 +118,9 @@ class Request extends Message implements RequestInterface
      */
     public function withRequestTarget($requestTarget)
     {
-        // TODO: Implement withRequestTarget() method.
+        $clone = clone $this;
+        $clone->requestTarget = $requestTarget;
+        return $clone;
     }
 
     /**
@@ -116,7 +150,17 @@ class Request extends Message implements RequestInterface
      */
     public function withMethod($method)
     {
-        // TODO: Implement withMethod() method.
+        if ($this->isValidMethod($method))
+        {
+            $clone = clone $this;
+            $clone->requestMethod = $method;
+
+            return $clone;
+        }
+
+        throw new \InvalidArgumentException(
+            sprintf('The HTTP method: %s is not valid.', $method)
+        );
     }
 
     /**
@@ -165,6 +209,46 @@ class Request extends Message implements RequestInterface
      */
     public function withUri(UriInterface $uri, $preserveHost = false)
     {
-        // TODO: Implement withUri() method.
+        $clone = clone $this;
+
+        if($preserveHost)
+        {
+            if (empty($this->requestUri->getHost()) && !empty($uri->getHost()))
+            {
+                $clone->requestUri = $uri;
+                $clone = $clone->withHeader('Host', $uri->getHost());
+                return $clone;
+            }
+
+            if (!empty($this->getHeader('Host')) || (empty($this->getHeader('Host')) && empty($uri->getHost())))
+            {
+                $clone->requestUri = $uri;
+                return $clone;
+            }
+        }
+
+        $clone->requestUri = $uri;
+        $clone = $clone->withHeader('Host', $uri->getHost());
+
+        return $clone;
+    }
+
+    /**
+     * Validates an HTTP method.
+     *
+     * @param string $method The method to validate.
+     * @return bool
+     * @throws \InvalidArgumentException if given method is not a string.
+     */
+    public function isValidMethod($method)
+    {
+        if (!is_string($method))
+        {
+            throw new \InvalidArgumentException(
+                sprintf('The HTTP method must be presented as a string. %s given.', gettype($method))
+            );
+        }
+
+        return in_array(strtoupper($method), $this->supportedMethods);
     }
 }

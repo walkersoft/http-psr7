@@ -8,42 +8,11 @@
 
 namespace Fusion\Http;
 
-use Psr\Http\Message\MessageInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
-/**
- * HTTP Message class based on PSR-7 standards.
- */
-class Message implements MessageInterface
+class Response extends Message implements ResponseInterface
 {
-
-    /**
-     * HTTP protocol version.
-     *
-     * @var string
-     */
-    protected $httpVersion = '1.1';
-
-    /**
-     * Array of real message headers, i.e. As they were given.
-     *
-     * @var array
-     */
-    protected $realHeaders = [];
-
-    /**
-     * Array of normalized headers for lookup purposes.
-     *
-     * @var array
-     */
-    protected $headers = [];
-
-    /**
-     * HTTP body content as a stream.
-     *
-     * @var \Psr\Http\Message\StreamInterface
-     */
-    protected $httpBody = null;
 
     /**
      * Retrieves the HTTP protocol version as a string.
@@ -54,7 +23,7 @@ class Message implements MessageInterface
      */
     public function getProtocolVersion()
     {
-        return $this->httpVersion;
+        // TODO: Implement getProtocolVersion() method.
     }
 
     /**
@@ -72,9 +41,7 @@ class Message implements MessageInterface
      */
     public function withProtocolVersion($version)
     {
-        $clone = clone $this;
-        $clone->httpVersion = (string)$version;
-        return $clone;
+        // TODO: Implement withProtocolVersion() method.
     }
 
     /**
@@ -104,7 +71,7 @@ class Message implements MessageInterface
      */
     public function getHeaders()
     {
-        return $this->realHeaders;
+        // TODO: Implement getHeaders() method.
     }
 
     /**
@@ -117,7 +84,7 @@ class Message implements MessageInterface
      */
     public function hasHeader($name)
     {
-        return isset($this->headers[strtolower($name)]);
+        // TODO: Implement hasHeader() method.
     }
 
     /**
@@ -136,11 +103,7 @@ class Message implements MessageInterface
      */
     public function getHeader($name)
     {
-        if ($this->hasHeader($name))
-        {
-            return $this->realHeaders[$this->headers[strtolower($name)]];
-        }
-        return [];
+        // TODO: Implement getHeader() method.
     }
 
     /**
@@ -164,11 +127,7 @@ class Message implements MessageInterface
      */
     public function getHeaderLine($name)
     {
-        if ($this->hasHeader($name))
-        {
-            return implode(',', $this->realHeaders[$this->headers[strtolower($name)]]);
-        }
-        return '';
+        // TODO: Implement getHeaderLine() method.
     }
 
     /**
@@ -188,25 +147,7 @@ class Message implements MessageInterface
      */
     public function withHeader($name, $value)
     {
-        //Check the data
-        if (!$this->verifyValidHeaderEntry($name, $value))
-        {
-            $message = "HTTP header MUST be a string - %s given. ";
-            $message .= "HTTP header values MUST be a string or an array of strings - %s given.";
-            $message = sprintf($message, gettype($name), gettype($value));
-            throw new \InvalidArgumentException($message);
-        }
-
-        //Integrity checks on the data passed, add the header to the mix.
-        if (is_string($value))
-        {
-            $value = [$value];
-        }
-
-        $clone = clone $this;
-        $clone->realHeaders[$name] = $value;
-        $clone->headers[strtolower($name)] = $name;
-        return $clone;
+        // TODO: Implement withHeader() method.
     }
 
     /**
@@ -227,25 +168,7 @@ class Message implements MessageInterface
      */
     public function withAddedHeader($name, $value)
     {
-        //Check the data
-        if (!$this->verifyValidHeaderEntry($name, $value))
-        {
-            $message = "HTTP header MUST be a string - %s given. ";
-            $message .= "HTTP header values MUST be a string or an array of strings - %s given.";
-            $message = sprintf($message, gettype($name), gettype($value));
-            throw new \InvalidArgumentException($message);
-        }
-
-        //See if the header exists, if not create it.
-        if (!isset($this->realHeaders[$name]))
-        {
-            return $this->withHeader($name, $value);
-        }
-
-        //The values are good, merge the values in with the current set.
-        $clone = clone $this;
-        $clone->realHeaders[$name] = array_merge($clone->realHeaders[$name], $value);
-        return $clone;
+        // TODO: Implement withAddedHeader() method.
     }
 
     /**
@@ -262,14 +185,7 @@ class Message implements MessageInterface
      */
     public function withoutHeader($name)
     {
-        if (!$this->hasHeader($name))
-        {
-            return $this;
-        }
-        $clone = clone $this;
-        unset($clone->realHeaders[$name]);
-        unset($clone->headers[strtolower($name)]);
-        return $clone;
+        // TODO: Implement withoutHeader() method.
     }
 
     /**
@@ -279,7 +195,7 @@ class Message implements MessageInterface
      */
     public function getBody()
     {
-        return $this->httpBody;
+        // TODO: Implement getBody() method.
     }
 
     /**
@@ -297,81 +213,62 @@ class Message implements MessageInterface
      */
     public function withBody(StreamInterface $body)
     {
-        $clone = clone $this;
-        $clone->httpBody = $body;
-        return $clone;
+        // TODO: Implement withBody() method.
     }
 
     /**
-     * Checks if an array contains only strings.
+     * Gets the response status code.
      *
-     * Scans an array to confirm that all elements contains only strings.
-     * Returns true if only strings exists or false otherwise.
+     * The status code is a 3-digit integer result code of the server's attempt
+     * to understand and satisfy the request.
      *
-     * @param array $input The input array to verify.
-     * @return bool
+     * @return int Status code.
      */
-    protected function verifyStringOnlyArray(array $input)
+    public function getStatusCode()
     {
-        foreach ($input as $element)
-        {
-            if (!is_string($element))
-            {
-                return false;
-            }
-        }
-        return true;
+        // TODO: Implement getStatusCode() method.
     }
 
     /**
-     * Checks if a header name is valid.
+     * Return an instance with the specified status code and, optionally, reason phrase.
      *
-     * Header values MUST be presented as a string.  Returns true if the
-     * header name is valid or false otherwise.
+     * If no reason phrase is specified, implementations MAY choose to default
+     * to the RFC 7231 or IANA recommended reason phrase for the response's
+     * status code.
      *
-     * @param string $name The header name to check.
-     * @return bool
+     * This method MUST be implemented in such a way as to retain the
+     * immutability of the message, and MUST return an instance that has the
+     * updated status and reason phrase.
+     *
+     * @link http://tools.ietf.org/html/rfc7231#section-6
+     * @link http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+     * @param int $code The 3-digit integer result code to set.
+     * @param string $reasonPhrase The reason phrase to use with the
+     *     provided status code; if none is provided, implementations MAY
+     *     use the defaults as suggested in the HTTP specification.
+     * @return self
+     * @throws \InvalidArgumentException For invalid status code arguments.
      */
-    protected function verifyValidHeaderName($name)
+    public function withStatus($code, $reasonPhrase = '')
     {
-        return is_string($name);
+        // TODO: Implement withStatus() method.
     }
 
     /**
-     * Checks if a header value is valid.
+     * Gets the response reason phrase associated with the status code.
      *
-     * Header values MUST presented as a string or an array of strings. Returns
-     * true if the header value is valid or false otherwise.
+     * Because a reason phrase is not a required element in a response
+     * status line, the reason phrase value MAY be null. Implementations MAY
+     * choose to return the default RFC 7231 recommended reason phrase (or those
+     * listed in the IANA HTTP Status Code Registry) for the response's
+     * status code.
      *
-     * @param string $value The header value to verify.
-     * @return bool
+     * @link http://tools.ietf.org/html/rfc7231#section-6
+     * @link http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml
+     * @return string Reason phrase; must return an empty string if none present.
      */
-    protected function verifyValidHeaderValue($value)
+    public function getReasonPhrase()
     {
-        if (!is_string($value) && !is_array($value))
-        {
-            return false;
-        }
-        if (is_array($value) && !$this->verifyStringOnlyArray($value))
-        {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Helper function to check valid header and value in one go.
-     *
-     * Encapsulates the verifyValidHeaderName() and verifyValidHeaderValue()
-     * into a single function call.  Returns true if both pieces of information
-     * are valid or false otherwise.
-     *
-     * @param string $name The header name to verify.
-     * @param string|string[] $value The header value(s) to verify.
-     * @return bool
-     */
-    protected function verifyValidHeaderEntry($name, $value)
-    {
-        return ($this->verifyValidHeaderName($name) && $this->verifyValidHeaderValue($value));
+        // TODO: Implement getReasonPhrase() method.
     }
 }
