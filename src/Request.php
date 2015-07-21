@@ -48,7 +48,8 @@ class Request extends Message implements RequestInterface
         'DELETE',
         'OPTIONS',
         'HEAD',
-        'TRACE'
+        'TRACE',
+        'CONNECT'
     ];
 
     /**
@@ -60,6 +61,10 @@ class Request extends Message implements RequestInterface
     public function __construct()
     {
         // TODO: Figure out all the needed params for a request.
+
+        //need a method
+        //need starting headers
+        //need uri
     }
 
     /**
