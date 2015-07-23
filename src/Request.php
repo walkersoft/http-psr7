@@ -19,14 +19,14 @@ class Request extends Message implements RequestInterface
      *
      * @var string
      */
-    private $requestTarget = null;
+    private $requestTarget = '';
 
     /**
      * Request method (HTTP Verb).
      *
      * @var string
      */
-    private $requestMethod = null;
+    private $requestMethod = '';
 
     /**
      * Request URI.
@@ -57,14 +57,19 @@ class Request extends Message implements RequestInterface
      *
      * Creates a new HTTP request message.
      *
+     * @param string $method The HTTP method of the request.
+     * @param string|UriInterface $uri The URI of the request.
+     * @param array $headers Initial headers of the request.
      */
-    public function __construct()
+    public function __construct($method, $uri, array $headers = [])
     {
         // TODO: Figure out all the needed params for a request.
 
         //need a method
         //need starting headers
         //need uri
+        $this->prepare($method, $uri, $headers);
+
     }
 
     /**
@@ -255,5 +260,42 @@ class Request extends Message implements RequestInterface
         }
 
         return in_array(strtoupper($method), $this->supportedMethods);
+    }
+
+    /**
+     * Prepares a newly created request for use.
+     *
+     * @param string $method The HTTP method of the request.
+     * @param string|UriInterface $uri The URI of the request.
+     * @param array $headers Initial headers of the request.
+     * @throws \InvalidArgumentException for any invalid parameters.
+     */
+    protected function prepare($method, $uri, array $headers)
+    {
+        $this->requestMethod = $this->isValidMethod($method) ? $method : '';
+
+        if($uri instanceof UriInterface)
+        {
+            $this->requestUri = $uri;
+        }
+        else
+        {
+            if(!is_string($uri))
+            {
+                throw new \InvalidArgumentException(
+                    sprintf('Invalid URI, the URI must be a string or implementation of UriInterface. %s given.', gettype($uri))
+                );
+            }
+
+            $this->requestUri = new Uri($uri);
+        }
+
+        foreach($headers as $name => $value)
+        {
+            if($this->verifyValidHeaderEntry($name, $value))
+            {
+                $this->realHeaders[$name] = $value;
+            }
+        }
     }
 }
