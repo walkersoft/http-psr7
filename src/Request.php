@@ -9,6 +9,7 @@
 namespace Fusion\Http;
 
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
 class Request extends Message implements RequestInterface
@@ -60,16 +61,11 @@ class Request extends Message implements RequestInterface
      * @param string $method The HTTP method of the request.
      * @param string|UriInterface $uri The URI of the request.
      * @param array $headers Initial headers of the request.
+     * @param StreamInterface $body StreamInterface for the HTTP message body.
      */
-    public function __construct($method, $uri, array $headers = [])
+    public function __construct($method, $uri, $headers = [], $body = null)
     {
-        // TODO: Figure out all the needed params for a request.
-
-        //need a method
-        //need starting headers
-        //need uri
-        $this->prepare($method, $uri, $headers);
-
+        $this->prepare($method, $uri, $headers, $body);
     }
 
     /**
@@ -238,7 +234,7 @@ class Request extends Message implements RequestInterface
         }
 
         $clone->requestUri = $uri;
-        $clone = $clone->withHeader('Host', $uri->getHost());
+        $clone = (!empty($uri->getHost())) ? $clone->withHeader('Host', $uri->getHost()) : $this->getUri()->getHost();
 
         return $clone;
     }
@@ -268,15 +264,43 @@ class Request extends Message implements RequestInterface
      * @param string $method The HTTP method of the request.
      * @param string|UriInterface $uri The URI of the request.
      * @param array $headers Initial headers of the request.
-     * @throws \InvalidArgumentException for any invalid parameters.
+     * @param StreamInterface $body The HTTP message body.
      */
-    protected function prepare($method, $uri, array $headers)
+    protected function prepare($method, $uri, array $headers, StreamInterface $body)
     {
         $this->requestMethod = $this->isValidMethod($method) ? $method : '';
+        $this->requestUri = $this->prepareUri($uri);
 
+        foreach($headers as $name => $value)
+        {
+            if($this->verifyValidHeaderEntry($name, $value))
+            {
+                $this->realHeaders[$name] = $value;
+            }
+        }
+
+        if($body !== null)
+        {
+            $this->httpBody = $body;
+        }
+    }
+
+    /**
+     * Prepares a URI for use in the Request.
+     *
+     * This method accepts a mixed value of either a UriInterface implementation
+     * or a string.  If a string is given then it is attempted to be parsed
+     * into the default Uri object.
+     *
+     * @param string|UriInterface $uri A string or object representing a URI.
+     * @return UriInterface An object implementing the UriInterface interface.
+     * @throws \InvalidArgumentException for any invalid parameters.
+     */
+    protected function prepareUri($uri)
+    {
         if($uri instanceof UriInterface)
         {
-            $this->requestUri = $uri;
+            return $uri;
         }
         else
         {
@@ -287,15 +311,9 @@ class Request extends Message implements RequestInterface
                 );
             }
 
-            $this->requestUri = new Uri($uri);
+            $uri = new Uri($uri);
         }
 
-        foreach($headers as $name => $value)
-        {
-            if($this->verifyValidHeaderEntry($name, $value))
-            {
-                $this->realHeaders[$name] = $value;
-            }
-        }
+        return $uri;
     }
 }
