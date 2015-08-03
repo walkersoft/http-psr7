@@ -86,7 +86,7 @@ class Request extends Message implements RequestInterface
      */
     public function getRequestTarget()
     {
-        if ($this->requestTarget !== null && $this->requestTarget == '/')
+        if (($this->requestTarget !== null && ($this->requestTarget == '/') || !empty($this->requestTarget)))
         {
             return $this->requestTarget;
         }
@@ -217,7 +217,7 @@ class Request extends Message implements RequestInterface
     {
         $clone = clone $this;
 
-        if($preserveHost)
+        if ($preserveHost)
         {
             if (empty($this->requestUri->getHost()) && !empty($uri->getHost()))
             {
@@ -234,7 +234,10 @@ class Request extends Message implements RequestInterface
         }
 
         $clone->requestUri = $uri;
-        $clone = (!empty($uri->getHost())) ? $clone->withHeader('Host', $uri->getHost()) : $this->getUri()->getHost();
+        $clone = (!empty($uri->getHost()))
+            ? $clone->withHeader('Host', $uri->getHost())
+            : $this->getUri()
+                   ->getHost();
 
         return $clone;
     }
@@ -270,18 +273,19 @@ class Request extends Message implements RequestInterface
     {
         $this->requestMethod = $this->isValidMethod($method) ? $method : '';
         $this->requestUri = $this->prepareUri($uri);
+        $this->httpBody = $body;
 
-        foreach($headers as $name => $value)
+        foreach ($headers as $name => $value)
         {
-            if($this->verifyValidHeaderEntry($name, $value))
+            if ($this->verifyValidHeaderEntry($name, $value))
             {
                 $this->realHeaders[$name] = $value;
             }
         }
 
-        if($body !== null)
+        if(!$this->hasHeader('Host'))
         {
-            $this->httpBody = $body;
+            $this->realHeaders['Host'] = $this->requestUri->getHost();
         }
     }
 
@@ -298,22 +302,28 @@ class Request extends Message implements RequestInterface
      */
     protected function prepareUri($uri)
     {
-        if($uri instanceof UriInterface)
+        if ($uri instanceof UriInterface)
         {
             return $uri;
         }
         else
         {
-            if(!is_string($uri))
+            if (!is_string($uri))
             {
                 throw new \InvalidArgumentException(
                     sprintf('Invalid URI, the URI must be a string or implementation of UriInterface. %s given.', gettype($uri))
                 );
             }
 
-            $uri = new Uri($uri);
+            $built = new Uri($uri);
+            if (!$built)
+            {
+                throw new \InvalidArgumentException(
+                    sprintf('Unable to create the URI from string: %s -- The provided string is malformed.', $uri)
+                );
+            }
         }
 
-        return $uri;
+        return $built;
     }
 }
