@@ -104,6 +104,7 @@ class RequestTest extends \PHPUnit_Framework_TestCase
     {
         $request = $this->request->withUri($this->makeFooBarMockUri(), true);
         $this->assertEquals('www.example.com', $request->getHeader('host')[0]);
+        $this->assertNotSame($request, $this->request);
     }
 
     public function testSettingUriPreserveHostWithNoExisingHost()
@@ -114,10 +115,18 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $this->assertNotSame($request, $this->request);
     }
 
+    public function testSettingUriAndPreserveHostWithNewRequestTargetWithQuery()
+    {
+        $request = $this->request->withUri(new Uri('http://www.barfoo.org/new/target/with?queryAttached'), true);
+        $this->assertEquals('/new/target/with?queryAttached', $request->getRequestTarget());
+        $this->assertNotSame($request, $this->request);
+    }
+
     public function testSettingUriAndNotPreserveHost()
     {
         $request = $this->request->withUri($this->makeFooBarMockUri());
         $this->assertEquals('www.foobar.net', $request->getHeader('host')[0]);
+        $this->assertNotSame($request, $this->request);
     }
 
     /**
