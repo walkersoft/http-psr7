@@ -219,25 +219,26 @@ class Request extends Message implements RequestInterface
 
         if ($preserveHost)
         {
-            if (empty($this->requestUri->getHost()) && !empty($uri->getHost()))
-            {
-                $clone->requestUri = $uri;
-                $clone = $clone->withHeader('Host', $uri->getHost());
-                return $clone;
-            }
-
-            if (!empty($this->getHeader('Host')) || (empty($this->getHeader('Host')) && empty($uri->getHost())))
+            /*
+             * If the host header is already present, assign the new URI and go.
+             * Also applies if there isn't a host header and the new URI doesn't
+             * contain a host either
+             */
+            if(($this->hasHeader('Host') && !empty($this->getHeader('Host')))
+               || (!$this->hasHeader('Host') && empty($uri->getHost()))
+            )
             {
                 $clone->requestUri = $uri;
                 return $clone;
             }
         }
 
+        if(!empty($uri->getHost()))
+        {
+            $clone = $clone->withoutHeader('Host')->withHeader('Host', [$uri->getHost()]);
+        }
+
         $clone->requestUri = $uri;
-        $clone = (!empty($uri->getHost()))
-            ? $clone->withHeader('Host', $uri->getHost())
-            : $this->getUri()
-                   ->getHost();
 
         return $clone;
     }
@@ -280,12 +281,14 @@ class Request extends Message implements RequestInterface
             if ($this->verifyValidHeaderEntry($name, $value))
             {
                 $this->realHeaders[$name] = $value;
+                $this->headers[strtolower($name)] = $name;
             }
         }
 
         if(!$this->hasHeader('Host'))
         {
             $this->realHeaders['Host'] = $this->requestUri->getHost();
+            $this->headers['host'] = 'Host';
         }
     }
 

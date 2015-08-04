@@ -117,7 +117,8 @@ class Message implements MessageInterface
      */
     public function hasHeader($name)
     {
-        return isset($this->headers[strtolower($name)]);
+        //return isset($this->headers[strtolower($name)]);
+        return array_key_exists(strtolower($name), $this->headers);
     }
 
     /**
@@ -136,11 +137,16 @@ class Message implements MessageInterface
      */
     public function getHeader($name)
     {
+        $header = [];
         if ($this->hasHeader($name))
         {
-            return $this->realHeaders[$this->headers[strtolower($name)]];
+            $header = $this->realHeaders[$this->headers[strtolower($name)]];
+            if(!is_array($header))
+            {
+                $header = [$header];
+            }
         }
-        return [];
+        return $header;
     }
 
     /**
@@ -237,7 +243,7 @@ class Message implements MessageInterface
         }
 
         //See if the header exists, if not create it.
-        if (!isset($this->realHeaders[$name]))
+        if (!isset($this->headers[strtolower($name)]))
         {
             return $this->withHeader($name, $value);
         }
@@ -245,6 +251,7 @@ class Message implements MessageInterface
         //The values are good, merge the values in with the current set.
         $clone = clone $this;
         $clone->realHeaders[$name] = array_merge($clone->realHeaders[$name], $value);
+        $clone->headers[strtolower($name)] = $name;
         return $clone;
     }
 

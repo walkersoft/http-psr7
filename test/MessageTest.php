@@ -101,7 +101,7 @@ class MessageTest extends \PHPUnit_Framework_TestCase
     {
         $http = $this->http->withHeader('foo', ['bar', 'baz', 'bim']);
         $this->assertEquals('bar,baz,bim', $http->getHeaderLine('FOO'));
-        $this->assertEquals('', $http->getHeaderLine('X-nothing-to-see-here'));
+        $this->assertEmpty($http->getHeaderLine('X-nothing-to-see-here'));
     }
 
     public function testSettingBodyStream()
