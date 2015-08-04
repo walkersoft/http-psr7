@@ -318,15 +318,9 @@ class Request extends Message implements RequestInterface
                 );
             }
 
-            $built = new Uri($uri);
-            if (!$built)
-            {
-                throw new \InvalidArgumentException(
-                    sprintf('Unable to create the URI from string: %s -- The provided string is malformed.', $uri)
-                );
-            }
+            $uri = new Uri($uri);
         }
 
-        return $built;
+        return $uri;
     }
 }
