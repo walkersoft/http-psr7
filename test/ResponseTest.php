@@ -104,7 +104,8 @@ class ResponseTest extends \PHPUnit_Framework_TestCase
             [599],
             [200.1],
             ['404'],
-            [1 + '101 dalmations']
+            [(1 + '101 dalmations')],
+            [(25 + '101 dalmations' + count($this->standardResponses()))]
         ];
     }
 

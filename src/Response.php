@@ -203,12 +203,13 @@ class Response extends Message implements ResponseInterface
      * Looks up and returns a reason phrase (if available) based on the given
      * status code or an empty string if one does not exist.
      *
+     * @param int $code HTTP response code to associate with a message.
      * @return string The reason phrase for a given status code.
      */
     protected function findReasonPhrase($code)
     {
         $reason = '';
-        if($this->isValidCode((int)$code))
+        if($this->isValidCode(intval($code)))
         {
             $reason = (isset($this->statusCodes[$code]))
                 ? $this->statusCodes[$code]
