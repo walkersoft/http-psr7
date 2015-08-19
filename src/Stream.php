@@ -62,6 +62,7 @@ class Stream implements StreamInterface
      */
     public function __construct($stream)
     {
+        //Check if the a resource was given
         if (!is_resource($stream))
         {
             throw new \InvalidArgumentException(
@@ -69,6 +70,7 @@ class Stream implements StreamInterface
             );
         }
 
+        //This resource implementation must be a stream
         if (get_resource_type($stream) !== 'stream')
         {
             throw new \InvalidArgumentException(
@@ -81,6 +83,7 @@ class Stream implements StreamInterface
 
         $this->stream = $stream;
         $this->metadata = stream_get_meta_data($this->stream);
+        $this->seekable = $this->metadata['seekable'];
     }
 
     /**
@@ -109,7 +112,10 @@ class Stream implements StreamInterface
      */
     public function close()
     {
-        // TODO: Implement close() method.
+        if(is_resource($this->stream))
+        {
+            fclose($this->stream);
+        }
     }
 
     /**
@@ -121,7 +127,9 @@ class Stream implements StreamInterface
      */
     public function detach()
     {
-        // TODO: Implement detach() method.
+        $this->close();
+        $this->stream = null;
+        return $this->stream;
     }
 
     /**
@@ -131,7 +139,13 @@ class Stream implements StreamInterface
      */
     public function getSize()
     {
-        // TODO: Implement getSize() method.
+        $stats = fstat($this->stream);
+        if ($stats !== false)
+        {
+            return $stats['size'];
+        }
+
+        return null;
     }
 
     /**
@@ -142,7 +156,12 @@ class Stream implements StreamInterface
      */
     public function tell()
     {
-        // TODO: Implement tell() method.
+        if(is_resource($this->stream))
+        {
+            return ftell($this->stream);
+        }
+
+        throw new \RuntimeException('The underlying resource is not a valid stream.');
     }
 
     /**
@@ -204,7 +223,12 @@ class Stream implements StreamInterface
      */
     public function isWritable()
     {
-        return $this->writable;
+        if(is_resource($this->stream))
+        {
+            return is_writable($this->metadata['uri']);
+        }
+
+        return false;
     }
 
     /**
