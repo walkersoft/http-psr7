@@ -171,7 +171,7 @@ class Stream implements StreamInterface
      */
     public function eof()
     {
-        // TODO: Implement eof() method.
+        return feof($this->stream);
     }
 
     /**
@@ -240,7 +240,14 @@ class Stream implements StreamInterface
      */
     public function write($string)
     {
-        // TODO: Implement write() method.
+        if (!is_resource($this->stream))
+        {
+            throw new \RuntimeException(
+                sprintf('Unable to write to stream. The stream is not a valid resource.')
+            );
+        }
+
+        return fwrite($this->stream, $string);
     }
 
     /**
@@ -265,7 +272,14 @@ class Stream implements StreamInterface
      */
     public function read($length)
     {
-        // TODO: Implement read() method.
+        if (!is_resource($this->stream))
+        {
+            throw new \RuntimeException(
+                sprintf('Unable to read from stream. The stream is not a valid resource.')
+            );
+        }
+
+        return fread($this->stream, $length);
     }
 
     /**
@@ -277,7 +291,21 @@ class Stream implements StreamInterface
      */
     public function getContents()
     {
-        // TODO: Implement getContents() method.
+        if (!is_resource($this->stream))
+        {
+            throw new \RuntimeException(
+                sprintf('Unable to get stream contents. The stream is not a valid resource.')
+            );
+        }
+
+        $contents = '';
+
+        while (!$this->eof())
+        {
+            $contents .= $this->read(4096);
+        }
+
+        return $contents;
     }
 
     /**
