@@ -1,13 +1,12 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: Jason Walker
- * Date: 8/10/2015
- * Time: 8:39 PM
+ * Part of the Fusion.Http component package.
+ *
+ * @author Jason L. Walker
+ * @license MIT
  */
 
 namespace Fusion\Http;
-
 
 use Psr\Http\Message\StreamInterface;
 
@@ -20,27 +19,6 @@ class Stream implements StreamInterface
      * @var mixed
      */
     private $stream;
-
-    /**
-     * States if the stream is seekable.
-     *
-     * @var bool
-     */
-    private $seekable;
-
-    /**
-     * States if the stream is writable.
-     *
-     * @var bool
-     */
-    private $writable;
-
-    /**
-     * States if the stream is readable.
-     *
-     * @var bool
-     */
-    private $readable;
 
     /**
      * Metadata about the streams as captured when constructed.
@@ -83,7 +61,6 @@ class Stream implements StreamInterface
 
         $this->stream = $stream;
         $this->metadata = stream_get_meta_data($this->stream);
-        $this->seekable = $this->metadata['seekable'];
     }
 
     /**
@@ -102,7 +79,8 @@ class Stream implements StreamInterface
      */
     public function __toString()
     {
-        // TODO: Implement __toString() method.
+        $this->rewind();
+        return $this->getContents();
     }
 
     /**
@@ -181,7 +159,7 @@ class Stream implements StreamInterface
      */
     public function isSeekable()
     {
-        return $this->seekable;
+        return $this->getMetadata('seekable');
     }
 
     /**
@@ -198,7 +176,14 @@ class Stream implements StreamInterface
      */
     public function seek($offset, $whence = SEEK_SET)
     {
-        // TODO: Implement seek() method.
+        if (!$this->getMetadata('seekable'))
+        {
+            throw new \RuntimeException(
+                sprintf('Unable to seek. The stream is not seekable')
+            );
+        }
+
+        fseek($this->stream, $offset, $whence);
     }
 
     /**
@@ -213,7 +198,14 @@ class Stream implements StreamInterface
      */
     public function rewind()
     {
-        // TODO: Implement rewind() method.
+        if (!$this->isSeekable())
+        {
+            throw new \RuntimeException(
+                sprintf('Unable to rewind. The stream is not seekable.')
+            );
+        }
+
+        $this->seek(0);
     }
 
     /**
@@ -257,7 +249,7 @@ class Stream implements StreamInterface
      */
     public function isReadable()
     {
-        return $this->readable;
+        return $this->getMetadata('readable');
     }
 
     /**
@@ -279,7 +271,7 @@ class Stream implements StreamInterface
             );
         }
 
-        return fread($this->stream, $length);
+        return fgets($this->stream, $length);
     }
 
     /**
@@ -300,9 +292,9 @@ class Stream implements StreamInterface
 
         $contents = '';
 
-        while (!$this->eof())
+        while (($buffer = $this->read(4096)) !== false)
         {
-            $contents .= $this->read(4096);
+            $contents .= $buffer;
         }
 
         return $contents;
@@ -322,6 +314,16 @@ class Stream implements StreamInterface
      */
     public function getMetadata($key = null)
     {
-        // TODO: Implement getMetadata() method.
+        if ($key === null)
+        {
+            return $this->metadata;
+        }
+
+        if (array_key_exists($key, $this->metadata))
+        {
+            return $this->metadata[$key];
+        }
+
+        return null;
     }
 }
