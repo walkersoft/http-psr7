@@ -79,8 +79,18 @@ class Stream implements StreamInterface
      */
     public function __toString()
     {
-        $this->rewind();
-        return $this->getContents();
+        // Suppress an exception if output can't be gathered through normal means.
+        try
+        {
+            $this->rewind();
+            $output = $this->getContents();
+        }
+        catch (\RuntimeException $e)
+        {
+            $output = '';
+        }
+
+        return $output;
     }
 
     /**
@@ -176,12 +186,15 @@ class Stream implements StreamInterface
      */
     public function seek($offset, $whence = SEEK_SET)
     {
+        //TODO: What happens if stream resource has been removed.
         if (!$this->getMetadata('seekable'))
         {
             throw new \RuntimeException(
                 sprintf('Unable to seek. The stream is not seekable')
             );
         }
+
+        //TODO: Need to check for situations where 'seekable' doesn't catch all failures.
 
         fseek($this->stream, $offset, $whence);
     }
@@ -268,6 +281,13 @@ class Stream implements StreamInterface
         {
             throw new \RuntimeException(
                 sprintf('Unable to read from stream. The stream is not a valid resource.')
+            );
+        }
+
+        if (!$this->isReadable())
+        {
+            throw new \RuntimeException(
+                sprintf('Unable to read from stream. The stream is not readable.')
             );
         }
 
