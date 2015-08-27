@@ -39,4 +39,24 @@ class StreamTest extends \PHPUnit_Framework_TestCase
             sprintf('echoing: %s', $this->stream)
         );
     }
+
+    public function testWritingToStream()
+    {
+        $this->assertEquals(9, $this->stream->write('foobarbaz'));
+    }
+
+    public function testTellWhereStreamIs()
+    {
+        $this->assertEquals(9, $this->stream->write('foobarbaz'));
+        $this->assertEquals(9, $this->stream->tell());
+    }
+
+    public function testRewindStream()
+    {
+        $this->assertEquals(9, $this->stream->write('foobarbaz'));
+        $this->stream->rewind();
+        $this->assertEquals(0, $this->stream->tell());
+    }
+
+
 }
