@@ -49,7 +49,7 @@ class Stream implements StreamInterface
         }
 
         //This resource implementation must be a stream
-        if (get_resource_type($stream) !== 'stream')
+        if (get_resource_type($stream) != 'stream')
         {
             throw new \InvalidArgumentException(
                 sprintf('The resource type must be a %s. Resource of %s given.',
@@ -87,7 +87,7 @@ class Stream implements StreamInterface
         }
         catch (\RuntimeException $e)
         {
-            $output = '';
+            $output = $e->getMessage();
         }
 
         return $output;
@@ -100,9 +100,10 @@ class Stream implements StreamInterface
      */
     public function close()
     {
-        if(is_resource($this->stream))
+        if (is_resource($this->stream))
         {
             fclose($this->stream);
+            $this->metadata = [];
         }
     }
 
@@ -115,9 +116,10 @@ class Stream implements StreamInterface
      */
     public function detach()
     {
-        $this->close();
+        $stream = $this->stream;
         $this->stream = null;
-        return $this->stream;
+        $this->metadata = [];
+        return $stream;
     }
 
     /**
@@ -127,13 +129,18 @@ class Stream implements StreamInterface
      */
     public function getSize()
     {
-        $stats = fstat($this->stream);
-        if ($stats !== false)
+        $size = null;
+        if (is_resource($this->stream))
         {
-            return $stats['size'];
+            $stats = fstat($this->stream);
+
+            if ($stats !== false)
+            {
+                $size = $stats['size'];
+            }
         }
 
-        return null;
+        return $size;
     }
 
     /**
@@ -144,12 +151,12 @@ class Stream implements StreamInterface
      */
     public function tell()
     {
-        if(is_resource($this->stream))
+        if (is_resource($this->stream))
         {
             return ftell($this->stream);
         }
 
-        throw new \RuntimeException('The underlying resource is not a valid stream.');
+        throw new \RuntimeException('The underlying resource is missing or not a valid stream.');
     }
 
     /**
@@ -169,7 +176,12 @@ class Stream implements StreamInterface
      */
     public function isSeekable()
     {
-        return $this->getMetadata('seekable');
+        if (is_resource($this->stream))
+        {
+            return $this->getMetadata('seekable');
+        }
+
+        return false;
     }
 
     /**
@@ -186,17 +198,17 @@ class Stream implements StreamInterface
      */
     public function seek($offset, $whence = SEEK_SET)
     {
-        //TODO: What happens if stream resource has been removed.
-        if (!$this->getMetadata('seekable'))
+        if (is_resource($this->stream))
         {
-            throw new \RuntimeException(
-                sprintf('Unable to seek. The stream is not seekable')
-            );
+            if (!$this->getMetadata('seekable'))
+            {
+                throw new \RuntimeException(
+                    sprintf('Unable to seek. The stream is not seekable')
+                );
+            }
+
+            fseek($this->stream, $offset, $whence);
         }
-
-        //TODO: Need to check for situations where 'seekable' doesn't catch all failures.
-
-        fseek($this->stream, $offset, $whence);
     }
 
     /**
@@ -228,12 +240,14 @@ class Stream implements StreamInterface
      */
     public function isWritable()
     {
-        if(is_resource($this->stream))
+        if (!is_resource($this->stream))
         {
-            return is_writable($this->metadata['uri']);
+            return false;
         }
 
-        return false;
+        return (preg_match('/[w+]/', $this->getMetadata('mode')) === 1)
+            ? true
+            : false;
     }
 
     /**
@@ -252,6 +266,13 @@ class Stream implements StreamInterface
             );
         }
 
+        if (!$this->isWritable())
+        {
+            throw new \RuntimeException(
+                sprintf('Unable to write to stream. Writing is not available for this stream.')
+            );
+        }
+
         return fwrite($this->stream, $string);
     }
 
@@ -262,7 +283,14 @@ class Stream implements StreamInterface
      */
     public function isReadable()
     {
-        return $this->getMetadata('readable');
+        if (!is_resource($this->stream))
+        {
+            return false;
+        }
+
+        return (preg_match('/[r+]/', $this->getMetadata('mode')) === 1)
+            ? true
+            : false;
     }
 
     /**
@@ -307,6 +335,13 @@ class Stream implements StreamInterface
         {
             throw new \RuntimeException(
                 sprintf('Unable to get stream contents. The stream is not a valid resource.')
+            );
+        }
+
+        if (!$this->isReadable())
+        {
+            throw new \RuntimeException(
+                sprintf('Unable to get stream contents. The stream is not readable.')
             );
         }
 
