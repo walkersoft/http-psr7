@@ -100,7 +100,13 @@ class StreamTest extends \PHPUnit_Framework_TestCase
 
     public function testIsNotSeekable()
     {
-        $this->stream = new Stream(fopen('php://input', 'r'));
+        $this->stream->detach();
+        $this->assertFalse($this->stream->isSeekable());
+    }
+
+    public function testIsNotSeekableStream()
+    {
+        $this->stream = new Stream(fopen('php://output', 'r'));
         $this->assertFalse($this->stream->isSeekable());
     }
 
@@ -172,6 +178,42 @@ class StreamTest extends \PHPUnit_Framework_TestCase
         $this->assertNull($this->stream->detach());
     }
 
+    public function testStreamIsntWritableNotStream()
+    {
+        $this->stream->detach();
+        $this->assertFalse($this->stream->isWritable());
+    }
+
+    public function testStreamIsntReadableNotStream()
+    {
+        $this->stream->detach();
+        $this->assertFalse($this->stream->isReadable());
+    }
+
+    public function testGettingMetadata()
+    {
+        $this->assertInternalType('array', $this->stream->getMetadata());
+    }
+
+    public function testGettingMetadataKey()
+    {
+        $this->assertTrue($this->stream->getMetadata('seekable'));
+    }
+
+    public function testNotGettingMetadataKey()
+    {
+        $this->assertNull($this->stream->getMetadata('foobar'));
+    }
+
+    public function testGettingExceptionMessageFromToString()
+    {
+        $this->stream->detach();
+        $this->assertEquals(
+            'Unable to rewind. The stream is not seekable.',
+            $this->stream->__toString()
+        );
+    }
+
     //Test for various exceptions
 
     /**
@@ -184,14 +226,11 @@ class StreamTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException \InvalidArgumentException
-
+     */
     public function testStreamIsntStreamResource()
     {
-        $resource = mysqli_connect('foo', 'bar', 'baz', 'bam');
-        echo get_resource_type($resource);
-        $this->stream = new Stream($resource);
-        unlink('foo.gz');
-    }*/
+        $this->stream = new Stream(stream_context_create());
+    }
 
     /**
      * @expectedException \RuntimeException
@@ -243,7 +282,34 @@ class StreamTest extends \PHPUnit_Framework_TestCase
      */
     public function testStreamCantReadNotReadable()
     {
-        $this->stream = new Stream(fopen('php://output', 'w'));
+        $this->stream = new Stream(fopen('php://output', 'r'));
         $this->stream->read(10);
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     */
+    public function testStreamCantSeekNotSeekableStream()
+    {
+        $this->stream = new Stream(fopen('php://output', 'r'));
+        $this->stream->seek(10);
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     */
+    public function testStreamCantGetContentsNotResource()
+    {
+        $this->stream->detach();
+        $this->stream->getContents();
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     */
+    public function testStreamCantGetContentsNotReadable()
+    {
+        $this->stream = new Stream(fopen('php://output', 'r'));
+        $this->stream->getContents();
     }
 }
