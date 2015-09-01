@@ -15,6 +15,20 @@ class UploadedFile implements UploadedFileInterface
 {
 
     /**
+     * Stream that represents the uploaded file.
+     *
+     * @var \Psr\Http\Message\StreamInterface
+     */
+    private $stream;
+
+    /**
+     * Flag to specify if file has been moved already.
+     *
+     * @var bool
+     */
+    private $hasMoved;
+
+    /**
      * Retrieve a stream representing the uploaded file.
      *
      * This method MUST return a StreamInterface instance, representing the
