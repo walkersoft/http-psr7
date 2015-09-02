@@ -29,6 +29,51 @@ class UploadedFile implements UploadedFileInterface
     private $hasMoved;
 
     /**
+     * File size of the uploaded file.
+     *
+     * @var int
+     */
+    private $bytes;
+
+    /**
+     * Associated uploaded file's error code.
+     *
+     * @var int
+     */
+    private $error;
+
+    /**
+     * File name of the uploaded file as reported by the client.
+     *
+     * @var string
+     */
+    private $filename;
+
+    /**
+     * File media type of the uploaded file as reported by the client.
+     *
+     * @var string
+     */
+    private $mediaType;
+
+    /**
+     * Constructor.
+     *
+     * @param StreamInterface $stream A stream representing the uploaded file.
+     * @param int $bytes The file size of the uploaded file.
+     * @param int $error Error code of the uploaded file.
+     * @param string|null $name File name as reported by the client.
+     * @param string|null $media Media type as reported by the client.
+     */
+    public function __construct(StreamInterface $stream, $bytes, $error, $name = null, $media = null)
+    {
+        $this->stream = $stream;
+        $this->bytes = (is_int($bytes)) ? $bytes : null;
+        // TODO: Figure out the best default handling when $error isn't properly set
+        $this->error = (is_int($error) && ($error >= 0 && $error <= 8)) ? $error : 0;
+    }
+
+    /**
      * Retrieve a stream representing the uploaded file.
      *
      * This method MUST return a StreamInterface instance, representing the
@@ -46,7 +91,14 @@ class UploadedFile implements UploadedFileInterface
      */
     public function getStream()
     {
-        // TODO: Implement getStream() method.
+        if (!$this->stream instanceof StreamInterface || $this->hasMoved)
+        {
+            throw new \RuntimeException(
+                'Unable to get the stream. The stream has either moved or is no longer valid.'
+            );
+        }
+
+        return $this->stream;
     }
 
     /**
@@ -97,7 +149,7 @@ class UploadedFile implements UploadedFileInterface
      */
     public function getSize()
     {
-        // TODO: Implement getSize() method.
+        return $this->bytes;
     }
 
     /**
@@ -116,7 +168,7 @@ class UploadedFile implements UploadedFileInterface
      */
     public function getError()
     {
-        // TODO: Implement getError() method.
+        return $this->error;
     }
 
     /**
@@ -134,7 +186,7 @@ class UploadedFile implements UploadedFileInterface
      */
     public function getClientFilename()
     {
-        // TODO: Implement getClientFilename() method.
+        return $this->filename;
     }
 
     /**
@@ -152,6 +204,6 @@ class UploadedFile implements UploadedFileInterface
      */
     public function getClientMediaType()
     {
-        // TODO: Implement getClientMediaType() method.
+        return $this->mediaType;
     }
 }
