@@ -70,7 +70,10 @@ class UploadedFile implements UploadedFileInterface
         $this->stream = $stream;
         $this->bytes = (is_int($bytes)) ? $bytes : null;
         // TODO: Figure out the best default handling when $error isn't properly set
-        $this->error = (is_int($error) && ($error >= 0 && $error <= 8)) ? $error : 0;
+        $this->error = (is_int($error) && ($error >= 0 && $error <= 8)) ? $error : 0;  //shouldn't default to OK when check fails
+        $this->filename = (is_string($name)) ? $name : null;
+        $this->media = (is_string($media)) ? $media : null;
+        $this->hasMoved = false;
     }
 
     /**
@@ -135,7 +138,12 @@ class UploadedFile implements UploadedFileInterface
      */
     public function moveTo($targetPath)
     {
-        // TODO: Implement moveTo() method.
+        if ($this->hasMoved)
+        {
+            throw new \RuntimeException(
+                'Unable to move the file. The file or stream has already been moved and is no longer valid.'
+            );
+        }
     }
 
     /**
