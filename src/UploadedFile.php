@@ -64,13 +64,22 @@ class UploadedFile implements UploadedFileInterface
      * @param int $error Error code of the uploaded file.
      * @param string|null $name File name as reported by the client.
      * @param string|null $media Media type as reported by the client.
+     * @throws \InvalidArgumentException when $error is not a valid UPLOAD_ERR_* constant.
      */
     public function __construct(StreamInterface $stream, $bytes, $error, $name = null, $media = null)
     {
+        if (is_int($error) && ($error >= 0 && $error <= 8))
+        {
+            $this->error = $error;
+        }
+        else
+        {
+            throw new \InvalidArgumentException(
+                sprintf('The error code must be a valid value as defined by the UPLOAD_ERR_* constants in PHP.')
+            );
+        }
         $this->stream = $stream;
         $this->bytes = (is_int($bytes)) ? $bytes : null;
-        // TODO: Figure out the best default handling when $error isn't properly set
-        $this->error = (is_int($error) && ($error >= 0 && $error <= 8)) ? $error : 0;  //shouldn't default to OK when check fails
         $this->filename = (is_string($name)) ? $name : null;
         $this->media = (is_string($media)) ? $media : null;
         $this->hasMoved = false;
