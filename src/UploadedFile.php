@@ -147,12 +147,32 @@ class UploadedFile implements UploadedFileInterface
      */
     public function moveTo($targetPath)
     {
+        if (!is_string($targetPath) || empty($targetPath))
+        {
+            throw new \InvalidArgumentException(
+                'Target path must be a non-empty string.'
+            );
+        }
+
         if ($this->hasMoved)
         {
             throw new \RuntimeException(
                 'Unable to move the file. The file or stream has already been moved and is no longer valid.'
             );
         }
+
+        //Check if in command line
+        if (empty(PHP_SAPI) || PHP_SAPI === 'cli')
+        {
+            $this->writeToFile($targetPath);
+        }
+        else
+        {
+            move_uploaded_file($this->getClientFilename(), $targetPath);
+        }
+
+        $this->hasMoved = true;
+        $this->stream = null;
     }
 
     /**
@@ -222,5 +242,30 @@ class UploadedFile implements UploadedFileInterface
     public function getClientMediaType()
     {
         return $this->mediaType;
+    }
+
+    /**
+     * Writes a stream to a file.
+     *
+     * Writes the associated stream to a file.  Useful in non-SAPI environments.
+     *
+     * @param string $targetFile The destination file.
+     * @throws \RuntimeException When the file cannot be opened.
+     */
+    private function writeToFile($targetFile)
+    {
+        if (!$file = fopen($targetFile, 'wb+'))
+        {
+            throw new \RuntimeException(
+                sprintf('Unable to open the target file: %s', $targetFile)
+            );
+        }
+
+        while(!$this->stream->eof())
+        {
+            fwrite($file, $this->stream->read(4096));
+        }
+
+        fclose($file);
     }
 }
