@@ -81,7 +81,7 @@ class UploadedFile implements UploadedFileInterface
         $this->stream = $stream;
         $this->bytes = (is_int($bytes)) ? $bytes : null;
         $this->filename = (is_string($name)) ? $name : null;
-        $this->media = (is_string($media)) ? $media : null;
+        $this->mediaType = (is_string($media)) ? $media : null;
         $this->hasMoved = false;
     }
 
@@ -162,7 +162,7 @@ class UploadedFile implements UploadedFileInterface
         }
 
         //Check if in command line
-        if (empty(PHP_SAPI) || PHP_SAPI === 'cli')
+        if (empty(PHP_SAPI) || $this->isCli())
         {
             $this->writeToFile($targetPath);
         }
@@ -261,11 +261,23 @@ class UploadedFile implements UploadedFileInterface
             );
         }
 
+        $this->stream->rewind();
+
         while(!$this->stream->eof())
         {
             fwrite($file, $this->stream->read(4096));
         }
 
         fclose($file);
+    }
+
+    /**
+     * Determines if PHP is running in the CLI mode.
+     *
+     * @return bool True if PHP is in CLI mode, false otherwise.
+     */
+    public function isCli()
+    {
+        return strpos(PHP_SAPI, 'cli') === 0;
     }
 }

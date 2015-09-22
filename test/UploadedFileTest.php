@@ -13,7 +13,7 @@ use Fusion\Http\UploadedFile;
 
 require '../vendor/autoload.php';
 
-class UploadedFileTest
+class UploadedFileTest extends \PHPUnit_Framework_TestCase
 {
 
     /**
@@ -36,9 +36,9 @@ class UploadedFileTest
     public function tearDown()
     {
         $this->upload = null;
-        if(file_exists('CrashTestDummy.dat'))
+        if (file_exists('CrashTestDummy.dat'))
         {
-            unlink('CrashTestDummy.dat');
+            //unlink('CrashTestDummy.dat');
         }
     }
 
@@ -65,5 +65,112 @@ class UploadedFileTest
     public function testGettingClientMediaType()
     {
         $this->assertEquals('text/plain', $this->upload->getClientMediaType());
+    }
+
+    public function testMovingFileInCli()
+    {
+        $this->upload->moveTo('CrashTestDummy.dat');
+        $this->assertEquals('FooBarBaz!', file_get_contents('CrashTestDummy.dat'));
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @dataProvider badErrorCodes
+     */
+    public function testCreatingUploadedFileWithBad($errorCode)
+    {
+        new UploadedFile($this->stream, $this->stream->getSize(), $errorCode);
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     */
+    public function testGettingStreamAfterMoving()
+    {
+        $this->upload->moveTo('CrashTestDummy.dat');
+        $this->upload->getStream();
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     */
+    public function testTryingToMoveASecondTime()
+    {
+        $this->upload->moveTo('CrashTestDummy.dat');
+        $this->upload->moveTo('CrashTestDummy.dat');
+        unlink('CrashTestDummy.dat');
+    }
+
+    /**
+     * @expectedException \InvalidArgumentException
+     * @dataProvider badPathValues
+     */
+    public function testTryingToMoveStreamToAnInvalid($path)
+    {
+        $this->upload->moveTo($path);
+    }
+
+    /**
+     * @expectedException \RuntimeException
+     */
+    public function testTryingToWriteToFileWithInvalidName()
+    {
+        @$this->upload->moveTo('#@fo`b*r.t?t');
+    }
+
+    /**
+     * This test is mainly for code coverage purposes.
+     *
+     * Since move_uploaded_file() checks to make sure that it is moving a file
+     * from a POST request, the moveTo() method fails anyway, even with a the
+     * correct values.  Therefore, the purpose of this method is to check for
+     * the presence of the warning that will be emitted.
+     *
+     */
+    public function testSeeingIfWarningIsThrownForMoveToInCliMode()
+    {
+        $mock = $this->getMockBuilder('\Fusion\Http\UploadedFile')
+            ->setMethods(['isCli'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $mock->expects($this->any())
+            ->method('isCli')
+            ->will($this->returnValue(false));
+        $mock->moveTo('CrashTestDummy.dat');
+        if(file_exists('CrashTestDummy.dat'))
+        {
+            unlink('CrashTestDummy.dat');
+        }
+    }
+
+
+    public function badErrorCodes()
+    {
+        return [
+            [-1],
+            [9],
+            [20.11029],
+            ['foo'],
+            [null],
+            [false],
+            [[1]],
+            [new \stdClass()],
+            [fopen('php://memory', 'w')]
+        ];
+    }
+
+    public function badPathValues()
+    {
+        return [
+            [-1],
+            [9],
+            [20.11029],
+            [''],
+            [null],
+            [false],
+            [[1]],
+            [new \stdClass()],
+            [fopen('php://memory', 'w')]
+        ];
     }
 }
