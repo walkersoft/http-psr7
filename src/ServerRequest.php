@@ -9,9 +9,52 @@
 namespace Fusion\Http;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UploadedFileInterface;
 
 class ServerRequest extends Request implements ServerRequestInterface
 {
+
+    /**
+     * Server parameters.
+     *
+     * @var array
+     */
+    private $serverVars = [];
+
+    /**
+     * Cookie values.
+     *
+     * @var array
+     */
+    private $cookies = [];
+
+    /**
+     * Uploaded files.
+     *
+     * @var UploadedFileInterface[]
+     */
+    private $uploads = [];
+
+    /**
+     * Values from a POST request.
+     *
+     * @var array
+     */
+    private $postVars = [];
+
+    /**
+     * List of additional attributes.
+     *
+     * @var array
+     */
+    private $attributes = [];
+
+    /**
+     * List of query parameters.
+     *
+     * @var array
+     */
+    private $queryVars = [];
 
     /**
      * Retrieve server parameters.
@@ -24,7 +67,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function getServerParams()
     {
-        // TODO: Implement getServerParams() method.
+        return $this->serverVars;
     }
 
     /**
@@ -39,7 +82,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function getCookieParams()
     {
-        // TODO: Implement getCookieParams() method.
+        return $this->cookies;
     }
 
     /**
@@ -61,7 +104,9 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withCookieParams(array $cookies)
     {
-        // TODO: Implement withCookieParams() method.
+        $clone = clone $this;
+        $clone->cookies = $cookies;
+        return $clone;
     }
 
     /**
@@ -78,7 +123,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function getQueryParams()
     {
-        // TODO: Implement getQueryParams() method.
+        return $this->queryVars;
     }
 
     /**
@@ -122,7 +167,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function getUploadedFiles()
     {
-        // TODO: Implement getUploadedFiles() method.
+        return $this->uploads;
     }
 
     /**
