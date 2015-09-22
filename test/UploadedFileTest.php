@@ -38,7 +38,7 @@ class UploadedFileTest extends \PHPUnit_Framework_TestCase
         $this->upload = null;
         if (file_exists('CrashTestDummy.dat'))
         {
-            //unlink('CrashTestDummy.dat');
+            unlink('CrashTestDummy.dat');
         }
     }
 
@@ -98,7 +98,6 @@ class UploadedFileTest extends \PHPUnit_Framework_TestCase
     {
         $this->upload->moveTo('CrashTestDummy.dat');
         $this->upload->moveTo('CrashTestDummy.dat');
-        unlink('CrashTestDummy.dat');
     }
 
     /**
@@ -123,11 +122,10 @@ class UploadedFileTest extends \PHPUnit_Framework_TestCase
      *
      * Since move_uploaded_file() checks to make sure that it is moving a file
      * from a POST request, the moveTo() method fails anyway, even with a the
-     * correct values.  Therefore, the purpose of this method is to check for
-     * the presence of the warning that will be emitted.
+     * correct values.
      *
      */
-    public function testSeeingIfWarningIsThrownForMoveToInCliMode()
+    public function testMockMovingFileNotInCliMode()
     {
         $mock = $this->getMockBuilder('\Fusion\Http\UploadedFile')
             ->setMethods(['isCli'])
@@ -137,10 +135,6 @@ class UploadedFileTest extends \PHPUnit_Framework_TestCase
             ->method('isCli')
             ->will($this->returnValue(false));
         $mock->moveTo('CrashTestDummy.dat');
-        if(file_exists('CrashTestDummy.dat'))
-        {
-            unlink('CrashTestDummy.dat');
-        }
     }
 
 
