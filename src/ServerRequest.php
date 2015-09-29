@@ -59,13 +59,6 @@ class ServerRequest extends Request implements ServerRequestInterface
     private $queryVars = [];
 
     /**
-     * List of parameters from a POST request.
-     *
-     * @var array
-     */
-    private $postVars = [];
-
-    /**
      * Constructor.
      *
      * Creates a new ServerRequest instance.
@@ -96,7 +89,7 @@ class ServerRequest extends Request implements ServerRequestInterface
         $this->serverVars = isset($_SERVER) ? $_SERVER : [];
         $this->cookies = empty($cookies) ? $_COOKIE : $cookies;
         $this->queryVars = empty($queryVars) ? $this->normalizeQueryString() : $queryVars;
-        $this->postVars = isset($_POST) ? $_POST : [];
+        $this->attributes = empty($attributes) ? [] : $attributes;
 
         if(!empty($files))
         {
@@ -294,7 +287,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withParsedBody($data)
     {
-        if ($data !== null || !is_object($data) || !is_array($data))
+        if ($data !== null && !is_object($data) && !is_array($data))
         {
             throw new \InvalidArgumentException(
                 sprintf('Parsed body data must be an object, an array or null. %s given', gettype($data))
@@ -365,7 +358,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withAttribute($name, $value)
     {
-        $clone = new $this;
+        $clone = clone $this;
         $clone->attributes[$name] = $value;
         return $clone;
     }
@@ -386,7 +379,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withoutAttribute($name)
     {
-        $clone = new $this;
+        $clone = clone $this;
 
         if (array_key_exists($name, $clone->attributes))
         {
@@ -397,41 +390,31 @@ class ServerRequest extends Request implements ServerRequestInterface
     }
 
     /**
-     * Returns values from $_POST superglobal or an empty array.
+     * Verifies instances of UploadedFileInterface within an array.
      *
-     * @return array
-     */
-    public function getPostVars()
-    {
-        return $this->postVars;
-    }
-
-    /**
-     * Verifies instances of UploadedFileInterface.
-     *
-     * Checks a single instance or array of
-     *
-     * @param array|UploadedFileInterface $file The item to verify.
-     * @throws \RuntimeException When $files is not an array or an instance
+     * @param UploadedFileInterface[] $uploads The item to verify.
+     * @throws \InvalidArgumentException When $uploads is not an array or an instance
      *     of UploadedFileInterface.
      */
-    private function verifyUploadedFiles($file)
+    private function verifyUploadedFiles(array $uploads)
     {
-        if(is_array($file))
+        foreach ($uploads as $item)
         {
-            foreach($file as $item)
+            if(is_array($item))
             {
                 $this->verifyUploadedFiles($item);
             }
-        }
-
-        if (!$file instanceof UploadedFileInterface)
-        {
-            throw new \RuntimeException(
-                sprintf('Uploaded files must be an instance of UploadedFileInterface. %s given.',
-                        is_object($file) ? get_class($file) : gettype($file)
-                )
-            );
+            else
+            {
+                if (!$item instanceof UploadedFileInterface)
+                {
+                    throw new \InvalidArgumentException(
+                        sprintf('Uploaded files must be an instance of UploadedFileInterface. %s given.',
+                                is_object($item) ? get_class($item) : gettype($item)
+                        )
+                    );
+                }
+            }
         }
     }
 
@@ -446,7 +429,10 @@ class ServerRequest extends Request implements ServerRequestInterface
 
         if (isset($this->serverVars['QUERY_STRING']))
         {
-            $sets = explode('&', $this->serverVars['QUERY_STRING']);
+            // TODO: Compare this method to spec in Uri::filterQuery() and see if refactoring is needed.
+            parse_str($this->serverVars['QUERY_STRING'], $data);
+
+            /*$sets = explode('&', $this->serverVars['QUERY_STRING']);
             $count = count($sets);
 
             for ($i = 0; $i < $count; ++$i)
@@ -460,7 +446,7 @@ class ServerRequest extends Request implements ServerRequestInterface
                 {
                     $data[$pair[0]] = $pair[1];
                 }
-            }
+            }*/
         }
 
         return $data;
