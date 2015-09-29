@@ -43,6 +43,13 @@ class ServerRequest extends Request implements ServerRequestInterface
     private $postVars = [];
 
     /**
+     * Parsed body data.
+     *
+     * @var mixed
+     */
+    private $parsedBody = null;
+
+    /**
      * List of additional attributes.
      *
      * @var array
@@ -106,6 +113,7 @@ class ServerRequest extends Request implements ServerRequestInterface
     {
         $clone = clone $this;
         $clone->cookies = $cookies;
+
         return $clone;
     }
 
@@ -183,7 +191,12 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withUploadedFiles(array $uploadedFiles)
     {
-        // TODO: Implement withUploadedFiles() method.
+        $this->verifyUploadedFiles($uploadedFiles);
+
+        $clone = clone $this;
+        $clone->uploads = $uploadedFiles;
+
+        return $clone;
     }
 
     /**
@@ -203,7 +216,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function getParsedBody()
     {
-        // TODO: Implement getParsedBody() method.
+        return $this->parsedBody;
     }
 
     /**
@@ -236,7 +249,10 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withParsedBody($data)
     {
-        // TODO: Implement withParsedBody() method.
+        $clone = clone $this;
+        $clone->parsedBody = $data;
+
+        return $clone;
     }
 
     /**
@@ -252,7 +268,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function getAttributes()
     {
-        // TODO: Implement getAttributes() method.
+        return $this->attributes;
     }
 
     /**
@@ -272,7 +288,12 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function getAttribute($name, $default = null)
     {
-        // TODO: Implement getAttribute() method.
+        if (array_key_exists($name, $this->attributes))
+        {
+            $default = $this->attributes[$name];
+        }
+
+        return $default;
     }
 
     /**
@@ -292,7 +313,9 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withAttribute($name, $value)
     {
-        // TODO: Implement withAttribute() method.
+        $clone = new $this;
+        $clone->attributes[$name] = $value;
+        return $clone;
     }
 
     /**
@@ -311,6 +334,44 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withoutAttribute($name)
     {
-        // TODO: Implement withoutAttribute() method.
+        $clone = new $this;
+
+        if (array_key_exists($name, $clone->attributes))
+        {
+            unset($clone->attributes[$name]);
+        }
+
+        return $clone;
+    }
+
+    /**
+     * Verifies instances of UploadedFileInterface.
+     *
+     * Checks a single instance or array of
+     *
+     * @param array|UploadedFileInterface $file The item to verify.
+     * @throws \RuntimeException When $files is not an array or an instance
+     *     of UploadedFileInterface.
+     */
+    private function verifyUploadedFiles($file)
+    {
+        if(is_array($file))
+        {
+            foreach($file as $item)
+            {
+                $this->verifyUploadedFiles($item);
+            }
+        }
+        else
+        {
+            if (!$file instanceof UploadedFileInterface)
+            {
+                throw new \RuntimeException(
+                    sprintf('Uploaded files must be an instance of UploadedFileInterface. %s given.',
+                            is_object($file) ? get_class($file) : gettype($file)
+                    )
+                );
+            }
+        }
     }
 }
