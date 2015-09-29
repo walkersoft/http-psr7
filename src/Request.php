@@ -270,7 +270,7 @@ class Request extends Message implements RequestInterface
      * @param array $headers Initial headers of the request.
      * @param StreamInterface $body The HTTP message body.
      */
-    protected function prepare($method, $uri, array $headers, StreamInterface $body)
+    protected function prepare($method, $uri, array $headers, StreamInterface $body = null)
     {
         $this->requestMethod = $this->isValidMethod($method) ? $method : '';
         $this->requestUri = $this->prepareUri($uri);

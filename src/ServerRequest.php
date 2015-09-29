@@ -9,7 +9,9 @@
 namespace Fusion\Http;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UploadedFileInterface;
+use Psr\Http\Message\UriInterface;
 
 class ServerRequest extends Request implements ServerRequestInterface
 {
@@ -36,13 +38,6 @@ class ServerRequest extends Request implements ServerRequestInterface
     private $uploads = [];
 
     /**
-     * Values from a POST request.
-     *
-     * @var array
-     */
-    private $postVars = [];
-
-    /**
      * Parsed body data.
      *
      * @var mixed
@@ -62,6 +57,53 @@ class ServerRequest extends Request implements ServerRequestInterface
      * @var array
      */
     private $queryVars = [];
+
+    /**
+     * List of parameters from a POST request.
+     *
+     * @var array
+     */
+    private $postVars = [];
+
+    /**
+     * Constructor.
+     *
+     * Creates a new ServerRequest instance.
+     *
+     * @param string $method The HTTP method of the request.
+     * @param string|UriInterface $uri The URI of the request.
+     * @param array $headers Initial headers of the request.
+     * @param StreamInterface $body StreamInterface for the HTTP message body.
+     * @param array $attributes Set of initial attributes for the request.
+     * @param array $queryVars Set of initial query variables (e.g. from $_GET).
+     * @param array $cookies Set of initial cookie values (e.g. from $_COOKIES).
+     * @param UploadedFileInterface[] $files Array tree of UploadedFileInterface
+     *     instances.
+     */
+    public function __construct(
+        $method,
+        $uri,
+        $headers = [],
+        StreamInterface $body = null,
+        $attributes = [],
+        $queryVars = [],
+        $cookies = [],
+        $files = []
+    )
+    {
+        parent::__construct($method, $uri, $headers, $body);
+
+        $this->serverVars = isset($_SERVER) ? $_SERVER : [];
+        $this->cookies = empty($cookies) ? $_COOKIE : $cookies;
+        $this->queryVars = empty($queryVars) ? $this->normalizeQueryString() : $queryVars;
+        $this->postVars = isset($_POST) ? $_POST : [];
+
+        if(!empty($files))
+        {
+            $this->verifyUploadedFiles($files);
+            $this->uploads = $files;
+        }
+    }
 
     /**
      * Retrieve server parameters.
@@ -158,7 +200,10 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withQueryParams(array $query)
     {
-        // TODO: Implement withQueryParams() method.
+        $clone = clone $this;
+        $clone->queryVars = $query;
+
+        return $clone;
     }
 
     /**
@@ -249,6 +294,13 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withParsedBody($data)
     {
+        if ($data !== null || !is_object($data) || !is_array($data))
+        {
+            throw new \InvalidArgumentException(
+                sprintf('Parsed body data must be an object, an array or null. %s given', gettype($data))
+            );
+        }
+
         $clone = clone $this;
         $clone->parsedBody = $data;
 
@@ -345,6 +397,16 @@ class ServerRequest extends Request implements ServerRequestInterface
     }
 
     /**
+     * Returns values from $_POST superglobal or an empty array.
+     *
+     * @return array
+     */
+    public function getPostVars()
+    {
+        return $this->postVars;
+    }
+
+    /**
      * Verifies instances of UploadedFileInterface.
      *
      * Checks a single instance or array of
@@ -362,16 +424,45 @@ class ServerRequest extends Request implements ServerRequestInterface
                 $this->verifyUploadedFiles($item);
             }
         }
-        else
+
+        if (!$file instanceof UploadedFileInterface)
         {
-            if (!$file instanceof UploadedFileInterface)
+            throw new \RuntimeException(
+                sprintf('Uploaded files must be an instance of UploadedFileInterface. %s given.',
+                        is_object($file) ? get_class($file) : gettype($file)
+                )
+            );
+        }
+    }
+
+    /**
+     * Normalizes data from QUERY_STRING to be injected into $queryVars.
+     *
+     * @return array
+     */
+    private function normalizeQueryString()
+    {
+        $data = [];
+
+        if (isset($this->serverVars['QUERY_STRING']))
+        {
+            $sets = explode('&', $this->serverVars['QUERY_STRING']);
+            $count = count($sets);
+
+            for ($i = 0; $i < $count; ++$i)
             {
-                throw new \RuntimeException(
-                    sprintf('Uploaded files must be an instance of UploadedFileInterface. %s given.',
-                            is_object($file) ? get_class($file) : gettype($file)
-                    )
-                );
+                $pair = explode('=', $sets[$i], 2);
+                if (count($pair) === 1)
+                {
+                    $data[$pair[0]] = null;
+                }
+                else
+                {
+                    $data[$pair[0]] = $pair[1];
+                }
             }
         }
+
+        return $data;
     }
 }
