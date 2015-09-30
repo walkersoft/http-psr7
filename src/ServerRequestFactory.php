@@ -68,6 +68,26 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
      */
     private $uploads = [];
 
+    /**
+     * Constructor.
+     *
+     * Configures all properties with the default implementations. These can be
+     * overridden when calling the buildServerRequest() method.
+     *
+     * @see \Fusion\Http\ServerRequestFactory::buildServerRequest()
+     */
+    public function __construct()
+    {
+        $this->configureMethod();
+        $this->configureUri();
+        $this->configureHeaders();
+        $this->configureBody();
+        $this->configureQuery();
+        $this->configureCookies();
+        $this->configureAttributes();
+        $this->configureUploads();
+    }
+
 
     /**
      * Instantiates and configures a ServerRequest object.
@@ -88,9 +108,9 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
      *  - 'headers' : An array of headers for the incoming request.
      *  - 'body' : An instance of Psr\Http\Message\StreamInterface.
      *  - 'attributes' : Additional attributes associated with the incoming request
-     *  - 'queryVars' : Key-value pairs from query information (e.g.: $_GET)
+     *  - 'query' : Key-value pairs from query information (e.g.: $_GET)
      *  - 'cookies' : Incoming cookie key-value pairs (e.g.: $_COOKIE)
-     *  - 'files' : Normalized array of Psr\Http\Message\UploadedFileInterface instances.
+     *  - 'uploads' : Normalized array of Psr\Http\Message\UploadedFileInterface instances.
      *
      * @param array $params An array of optional values that will override
      *     default values specified by the implementation.
@@ -98,7 +118,25 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
      */
     public function buildServerRequest(array $params = [])
     {
-        // TODO: Implement buildServerRequest() method.
+        $method = isset($params['method']) ? $params['method'] : $this->method;
+        $uri = isset($params['uri']) ? $params['uri'] : $this->uri;
+        $headers = isset($params['headers']) ? $params['headers'] : $this->headers;
+        $body = isset($params['body']) ? $params['body'] : $this->body;
+        $attributes = isset($params['attributes']) ? $params['attributes'] : $this->attributes;
+        $query = isset($params['query']) ? $params['query'] : $this->query;
+        $cookies = isset($params['cookies']) ? $params['cookies'] : $this->cookies;
+        $uploads = isset($params['uploads']) ? $params['uploads'] : $this->uploads;
+
+        return new ServerRequest(
+            $method,
+            $uri,
+            $headers,
+            $body,
+            $attributes,
+            $query,
+            $cookies,
+            $uploads
+        );
     }
 
     /**
@@ -110,7 +148,7 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
     {
         $this->method = $method;
 
-        if(isset($_SERVER['REQUEST_METHOD']))
+        if (isset($_SERVER['REQUEST_METHOD']))
         {
             $this->method = $_SERVER['REQUEST_METHOD'];
         }
@@ -138,11 +176,20 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
      * values in their contents should have the value assigned as an array.
      *
      * @see \Psr\Http\Message\MessageInterface::withHeader()
-     * @return array
      */
     public function configureHeaders()
     {
-        
+        if (isset($_SERVER))
+        {
+            foreach ($_SERVER as $header => $value)
+            {
+                if (strtolower(substr($header, 0, 5)) === "http_")
+                {
+                    $header = $this->formatHeader(substr($header, 5));
+                    $this->headers[$header] = $value;
+                }
+            }
+        }
     }
 
     /**
@@ -150,14 +197,20 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
      *
      * Creates an instance of \Psr\Http\Message\StreamInterface representing the
      * incoming server request body.  Typically this would be PHP built-in stream
-     * php://input.
-     *
-     * @return \Psr\Http\Message\StreamInterface A StreamInterface representing
-     *     the incoming request body.
+     * php://input or a copy of it in another stream.
      */
     public function configureBody()
     {
+        $temp = fopen('php://temp', 'r+');
+        if (array_key_exists('Content-Type', $this->headers)
+            && $this->headers['Content-Type'] !== 'multipart/form-data'
+        )
+        {
+            $input = fopen('php://input', 'r');
+            stream_copy_to_stream($input, $temp);
+        }
 
+        $this->body = new Stream($temp);
     }
 
     /**
@@ -165,22 +218,21 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
      *
      * Attributes are key-value pairs with pieces of information relevant to the
      * incoming request at hand.  This value is typically overridden by client code.
-     *
-     * @return array An array of key-value pairs detailing additional attributes.
      */
     public function configureAttributes()
     {
-
+        $this->attributes = [];
     }
 
     /**
-     * Configures query variable, typically from $_GET, as an array.
-     *
-     * @return array An array of key-value pairs of query variables.
+     * Configures query variables, typically from values stored in $_GET.
      */
     public function configureQuery()
     {
-
+        if (isset($_GET))
+        {
+            $this->query = $_GET;
+        }
     }
 
     /**
@@ -188,12 +240,13 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
      *
      * This method MUST return an array that is consistent in structure with
      * the $_COOKIE super-global.
-     *
-     * @return array An array of cookie values consistent with $_COOKIE.
      */
     public function configureCookies()
     {
-
+        if (isset($_COOKIE))
+        {
+            $this->cookies = $_COOKIE;
+        }
     }
 
     /**
@@ -202,12 +255,66 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
      * Checks the contents of the $_FILES super-global and creates a normalized
      * array of \Psr\Http\Message\UploadedFileInterface instances.
      *
-     * This method SHOULD only attempt to configure uploads in SAPI environments.
-     *
-     * @return string The HTTP request method being used.
+     * This method SHOULD only attempt to configure uploads in SAPI environments
+     * and will only operate properly on upload inputs names separately or a
+     * single dimension array of files.
      */
     public function configureUploads()
     {
+        $this->uploads = [];
+        if(isset($_FILES))
+        {
+            //foreach($_FILES as $name => $input)
+            //{
+                $upload = $this->processMultiFileUploadData($_FILES['bar']);
+                var_dump($upload);
+                foreach ($upload as $data)
+                {
+                    $this->uploads[] = new UploadedFile(
+                        new Stream(fopen($data['tmp_name'], 'r')),
+                        $data['size'],
+                        $data['error'],
+                        $data['name'],
+                        $data['type']
+                    );
+                }
+            //}
+        }
+    }
 
+    protected function processMultiFileUploadData(array $files)
+    {
+        $data = [];
+
+        foreach($files as $field => $info)
+        {
+            foreach($info as $key => $value)
+            {
+                $data[$key][$field] = $files[$field][$key];
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Properly formats a header for later lookup and transmittal.
+     *
+     * The expectancy is that PHP will store HTTP header names similar to that
+     * of constants in the $_SERVER super-global. The header names are in all
+     * caps and hyphens are replaced with underscores. This method will normalize
+     * those names into something normally seen in HTTP messages.
+     *
+     * Example: `HTTP_HOST` becomes `Host` and `HTTP_X_REQUESTED_WITH` becomes
+     * `X-Requested-With`.
+     *
+     * @param string $header The header name.
+     * @return string The formatted header.
+     */
+    protected function formatHeader($header)
+    {
+        $header = str_replace("_", " ", str_replace("-", " ", strtolower($header)));
+        $header = str_replace(" ", "-", ucwords($header));
+        return $header;
     }
 }

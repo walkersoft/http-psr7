@@ -168,7 +168,7 @@ class UploadedFile implements UploadedFileInterface
         }
         else
         {
-            move_uploaded_file($this->getClientFilename(), $targetPath);
+            move_uploaded_file($this->getStream()->getMetadata('uri'), $targetPath);
         }
 
         $this->hasMoved = true;
