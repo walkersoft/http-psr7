@@ -261,34 +261,82 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
      */
     public function configureUploads()
     {
-        $this->uploads = [];
-        if(isset($_FILES))
+        if (isset($_FILES))
         {
-            //foreach($_FILES as $name => $input)
-            //{
-                $upload = $this->processMultiFileUploadData($_FILES['bar']);
-                var_dump($upload);
-                foreach ($upload as $data)
+            foreach($_FILES as $id => $data)
+            {
+                if(is_array($data) && array_key_exists('tmp_name', $data))
                 {
-                    $this->uploads[] = new UploadedFile(
-                        new Stream(fopen($data['tmp_name'], 'r')),
-                        $data['size'],
-                        $data['error'],
-                        $data['name'],
-                        $data['type']
-                    );
+                    if(is_array($data['tmp_name'])) //multiple files
+                    {
+                        $this->processUploads(
+                            $this->processMultiFileUploadData($_FILES[$id])
+                        );
+                    }
+                    else //dangerous assumption only a single file
+                    {
+                        $this->processUploads(
+                            $this->processSingleFileUploadData($_FILES[$id])
+                        );
+                    }
                 }
-            //}
+            }
+            /*foreach($_FILES as $name => $input)
+            {
+            $upload = $this->processMultiFileUploadData($_FILES['bar']);
+            var_dump($upload);
+            foreach ($upload as $data)
+            {
+
+                $this->uploads[] = new UploadedFile(
+                    new Stream(fopen($data['tmp_name'], 'r')),
+                    $data['size'],
+                    $data['error'],
+                    $data['name'],
+                    $data['type']
+                );
+            }
+            //}*/
         }
+    }
+
+    protected function processUploads(array $uploads)
+    {
+        foreach ($uploads as $upload)
+        {
+            if (isset($upload['tmp_name'])
+                && !empty($upload['tmp_name'])
+                && file_exists($upload['tmp_name'])
+            )
+            {
+                $this->uploads[] = new UploadedFile(
+                    new Stream(fopen($upload['tmp_name'], 'r')),
+                    $upload['size'],
+                    $upload['error'],
+                    $upload['name'],
+                    $upload['type']
+                );
+            }
+        }
+    }
+
+    protected function processSingleFileUploadData(array $file)
+    {
+        $data = [];
+        foreach ($file as $field => $info)
+        {
+            $data[0][$field] = $info;
+        }
+
+        return $data;
     }
 
     protected function processMultiFileUploadData(array $files)
     {
         $data = [];
-
-        foreach($files as $field => $info)
+        foreach ($files as $field => $info)
         {
-            foreach($info as $key => $value)
+            foreach ($info as $key => $value)
             {
                 $data[$key][$field] = $files[$field][$key];
             }
