@@ -44,6 +44,7 @@ class UploadedFileTest extends \PHPUnit_Framework_TestCase
 
     public function testGettingStream()
     {
+        $this->assertTrue($this->upload->hasValidStream());
         $this->assertSame($this->stream, $this->upload->getStream());
     }
 
@@ -88,6 +89,7 @@ class UploadedFileTest extends \PHPUnit_Framework_TestCase
     public function testGettingStreamAfterMoving()
     {
         $this->upload->moveTo('CrashTestDummy.dat');
+        $this->assertFalse($this->upload->hasValidStream());
         $this->upload->getStream();
     }
 
@@ -121,19 +123,23 @@ class UploadedFileTest extends \PHPUnit_Framework_TestCase
      * This test is mainly for code coverage purposes.
      *
      * Since move_uploaded_file() checks to make sure that it is moving a file
-     * from a POST request, the moveTo() method fails anyway, even with a the
+     * from a POST request, the moveTo() method fails anyway, even with the
      * correct values.
      *
      */
     public function testMockMovingFileNotInCliMode()
     {
         $mock = $this->getMockBuilder('\Fusion\Http\UploadedFile')
-            ->setMethods(['isCli'])
+            ->setMethods(['isCli', 'getStream'])
             ->disableOriginalConstructor()
             ->getMock();
         $mock->expects($this->any())
             ->method('isCli')
             ->will($this->returnValue(false));
+        $mock->expects($this->any())
+             ->method('getStream')
+             ->will($this->returnValue($this->getMock('\Psr\Http\Message\StreamInterface')));
+
         $mock->moveTo('CrashTestDummy.dat');
     }
 

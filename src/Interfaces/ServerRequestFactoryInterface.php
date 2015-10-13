@@ -28,5 +28,5 @@ interface ServerRequestFactoryInterface
      *     default values specified by the implementation.
      * @return \Fusion\Http\ServerRequest
      */
-    public function buildServerRequest(array $params = []);
+    public function makeServerRequest(array $params = []);
 }

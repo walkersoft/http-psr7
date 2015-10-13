@@ -116,7 +116,7 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
      *     default values specified by the implementation.
      * @return \Fusion\Http\ServerRequest
      */
-    public function buildServerRequest(array $params = [])
+    public function makeServerRequest(array $params = [])
     {
         $method = isset($params['method']) ? $params['method'] : $this->method;
         $uri = isset($params['uri']) ? $params['uri'] : $this->uri;
@@ -160,10 +160,10 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
     public function configureUri()
     {
         $uri = 'http';
-        $uri .= isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS'])
-            ? 's://'
-            : '://';
-        $uri .= $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+        $uri .= isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) ? 's://' : '://';
+        $host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : '';
+        $request = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+        $uri .= $host . $request;
 
         $this->uri = $uri;
     }
@@ -281,25 +281,14 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
                     }
                 }
             }
-            /*foreach($_FILES as $name => $input)
-            {
-            $upload = $this->processMultiFileUploadData($_FILES['bar']);
-            var_dump($upload);
-            foreach ($upload as $data)
-            {
-
-                $this->uploads[] = new UploadedFile(
-                    new Stream(fopen($data['tmp_name'], 'r')),
-                    $data['size'],
-                    $data['error'],
-                    $data['name'],
-                    $data['type']
-                );
-            }
-            //}*/
         }
     }
 
+    /**
+     * Accepts uploaded file metadata and creates an UploadedFileInterface instance.
+     *
+     * @param array $uploads An array of uploaded file metadata found in $_FILES.
+     */
     protected function processUploads(array $uploads)
     {
         foreach ($uploads as $upload)
@@ -320,6 +309,12 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
         }
     }
 
+    /**
+     * Restructures and returns metadata of a single file for processing.
+     *
+     * @param array $file An array with file metadata.
+     * @return array
+     */
     protected function processSingleFileUploadData(array $file)
     {
         $data = [];
@@ -331,6 +326,12 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
         return $data;
     }
 
+    /**
+     * Restructures and returns metadata of multiple files for processing.
+     *
+     * @param array $files A multidimensional array with file metadata.
+     * @return array
+     */
     protected function processMultiFileUploadData(array $files)
     {
         $data = [];

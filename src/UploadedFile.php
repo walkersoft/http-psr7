@@ -168,7 +168,7 @@ class UploadedFile implements UploadedFileInterface
         }
         else
         {
-            move_uploaded_file($this->getStream()->getMetadata('uri'), $targetPath);
+            move_uploaded_file($this->getStream()->getMetadata('uri'),$targetPath);
         }
 
         $this->hasMoved = true;
@@ -263,7 +263,7 @@ class UploadedFile implements UploadedFileInterface
 
         $this->stream->rewind();
 
-        while(!$this->stream->eof())
+        while (!$this->stream->eof())
         {
             fwrite($file, $this->stream->read(4096));
         }
@@ -279,5 +279,15 @@ class UploadedFile implements UploadedFileInterface
     public function isCli()
     {
         return strpos(PHP_SAPI, 'cli') === 0;
+    }
+
+    /**
+     * Determines if this instance still has a valid stream.
+     *
+     * @return bool
+     */
+    public function hasValidStream()
+    {
+        return (!$this->stream instanceof StreamInterface || $this->hasMoved) ? false : true;
     }
 }
