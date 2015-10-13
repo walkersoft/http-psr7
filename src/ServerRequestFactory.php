@@ -78,14 +78,7 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
      */
     public function __construct()
     {
-        $this->configureMethod();
-        $this->configureUri();
-        $this->configureHeaders();
-        $this->configureBody();
-        $this->configureQuery();
-        $this->configureCookies();
-        $this->configureAttributes();
-        $this->configureUploads();
+        $this->configureDefaults();
     }
 
 
@@ -127,7 +120,7 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
         $cookies = isset($params['cookies']) ? $params['cookies'] : $this->cookies;
         $uploads = isset($params['uploads']) ? $params['uploads'] : $this->uploads;
 
-        return new ServerRequest(
+        $request = new ServerRequest(
             $method,
             $uri,
             $headers,
@@ -137,6 +130,13 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
             $cookies,
             $uploads
         );
+
+        if(isset($_POST))
+        {
+            $request = $request->withParsedBody($_POST);
+        }
+
+        return $request;
     }
 
     /**
@@ -186,6 +186,12 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
                 if (strtolower(substr($header, 0, 5)) === "http_")
                 {
                     $header = $this->formatHeader(substr($header, 5));
+                    $this->headers[$header] = $value;
+                }
+
+                if (strtolower(substr($header, 0, 8)) === "content_")
+                {
+                    $header = $this->formatHeader($header);
                     $this->headers[$header] = $value;
                 }
             }
@@ -365,5 +371,17 @@ class ServerRequestFactory implements ServerRequestFactoryInterface
         $header = str_replace("_", " ", str_replace("-", " ", strtolower($header)));
         $header = str_replace(" ", "-", ucwords($header));
         return $header;
+    }
+
+    public function configureDefaults()
+    {
+        $this->configureMethod();
+        $this->configureUri();
+        $this->configureHeaders();
+        $this->configureBody();
+        $this->configureQuery();
+        $this->configureCookies();
+        $this->configureAttributes();
+        $this->configureUploads();
     }
 }

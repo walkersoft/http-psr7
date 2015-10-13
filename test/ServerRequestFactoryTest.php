@@ -18,7 +18,7 @@ class ServerRequestFactoryTest extends \PHPUnit_Framework_TestCase
     /**
      * @var \Fusion\Http\ServerRequestFactory
      */
-    private $request;
+    private $factory;
 
     public function setUp()
     {
@@ -26,7 +26,8 @@ class ServerRequestFactoryTest extends \PHPUnit_Framework_TestCase
         {
             $_SERVER = [];
         }
-        $this->request = new ServerRequestFactory();
+        $this->factory = new ServerRequestFactory();
+        $this->factory->configureDefaults();
     }
 
     public function tearDown()
@@ -36,14 +37,34 @@ class ServerRequestFactoryTest extends \PHPUnit_Framework_TestCase
 
     public function testBuildingVanillaRequest()
     {
-        $request = $this->request->makeServerRequest();
+        $request = $this->factory->makeServerRequest();
         $this->assertInstanceOf('\Psr\Http\Message\ServerRequestInterface', $request);
+    }
+
+    public function testConfiguringMethod()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $this->factory->configureDefaults();
+        $request = $this->factory->makeServerRequest();
+        $this->assertInstanceOf('\Psr\Http\Message\ServerRequestInterface', $request);
+        $this->assertEquals('POST', $request->getMethod());
+    }
+
+    public function testConfiguringHeadersWithServerInfo()
+    {
+        $this->injectServerVars();
+        $this->factory->configureDefaults();
+        $request = $this->factory->makeServerRequest();
+        $this->assertInstanceOf('\Psr\Http\Message\ServerRequestInterface', $request);
+        $this->assertEquals('localhost', $request->getHeader('host')[0]);
+        $this->assertEquals('', $request->getHeaderLine('host'));
     }
 
     private function injectServerVars()
     {
         $_SERVER['HTTP_HOST'] = 'localhost';
         $_SERVER['HTTP_CONNECTION'] = 'keep-alive';
-
+        $_SERVER['CONTENT_TYPE'] = 'application/json';
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'ServerRequestFactoryTest';
     }
 }

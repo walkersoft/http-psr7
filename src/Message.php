@@ -170,7 +170,7 @@ class Message implements MessageInterface
      */
     public function getHeaderLine($name)
     {
-        if ($this->hasHeader($name))
+        if ($this->hasHeader($name) && is_array($this->realHeaders[$this->headers[strtolower($name)]]))
         {
             return implode(',', $this->realHeaders[$this->headers[strtolower($name)]]);
         }
