@@ -1,6 +1,9 @@
 <?php
 /**
- * Unit test for \Fusion\Http\Uri class.
+ * Part of the Fusion.Http component package.
+ *
+ * @author Jason L. Walker
+ * @license MIT
  */
 namespace Fusion\Http\Test;
 

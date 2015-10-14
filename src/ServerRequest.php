@@ -1,10 +1,11 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: jwalker
- * Date: 9/22/2015
- * Time: 7:44 AM
+ * Part of the Fusion.Http component package.
+ *
+ * @author Jason L. Walker
+ * @license MIT
  */
+
 
 namespace Fusion\Http;
 

@@ -1,9 +1,9 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: Jason Walker
- * Date: 9/29/2015
- * Time: 8:14 PM
+ * Part of the Fusion.Http component package.
+ *
+ * @author Jason L. Walker
+ * @license MIT
  */
 
 namespace Fusion\Http\Interfaces;

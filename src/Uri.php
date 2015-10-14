@@ -6,6 +6,7 @@
  * @license MIT
  */
 
+
 namespace Fusion\Http;
 
 use Psr\Http\Message\UriInterface;

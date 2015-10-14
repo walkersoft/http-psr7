@@ -1,9 +1,9 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: jwalker
- * Date: 9/29/2015
- * Time: 11:03 AM
+ * Part of the Fusion.Http component package.
+ *
+ * @author Jason L. Walker
+ * @license MIT
  */
 
 require '../vendor/autoload.php';
