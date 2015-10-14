@@ -134,6 +134,7 @@ class ServerRequestFactoryTest extends \PHPUnit_Framework_TestCase
         $_FILES['test']['error'][0] = 0;
         $_FILES['test']['type'][0] = 'text/plain';
 
+        //Interact with the filesystem a second time.
         $text2 = 'barfoo.txt';
         $handle = fopen($text2, 'w');
         fwrite($handle, $text2);
