@@ -1,9 +1,9 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: Jason Walker
- * Date: 11/30/2015
- * Time: 6:10 PM
+ * Part of the Fusion.Http component package.
+ *
+ * @author Jason L. Walker
+ * @license MIT
  */
 
 namespace Fusion\Http;
@@ -41,12 +41,19 @@ class ResponseTransmitter implements ResponseTransmitterInterface
 
     /**
      * Transmit all HTTP headers to the client.
+     *
+     * This method MUST NOT send a `CRLF` after the headers are sent.
+     *
+     * This method MUST ensure that all headers returned by the response are
+     * properly converted to strings.
+     *
+     * @see http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4
      */
     private function transmitHeaders()
     {
         header(
             sprintf(
-                "HTTP/%s %d %s \r\n",
+                "HTTP/%s %d %s\r\n",
                 $this->response->getProtocolVersion(),
                 $this->response->getStatusCode(),
                 $this->response->getReasonPhrase()
@@ -55,19 +62,23 @@ class ResponseTransmitter implements ResponseTransmitterInterface
 
         foreach ($this->response->getHeaders() as $header => $value)
         {
-            header(sprintf("%s: %s \r\n", $header, $value));
+            header(sprintf("%s: %s\r\n", $header, implode(',', $value)), false);
         }
 
-        header("\r\n");
     }
 
     /**
      * Transmit the stream contents to the client.
+     *
+     * This method MUST send a `CRLF` before sending the body to the client.
+     *
+     * @see http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4
      */
     private function transmitBody()
     {
         $stream = $this->response->getBody();
         $stream->rewind();
+        echo "\r\n";
 
         while(!$stream->eof())
         {
