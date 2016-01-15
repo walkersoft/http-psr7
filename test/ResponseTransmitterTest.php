@@ -34,7 +34,7 @@ class ResponseTransmitterTest extends \PHPUnit_Framework_TestCase
     public function testEmittingVanillaResponse()
     {
         ob_start();
-        $stream = new Stream(fopen('php://temp', 'wb'));
+        $stream = new Stream(fopen('php://temp', 'w+'));
         $stream->write('foobar');
         $response = new Response();
         $response = $response->withHeader('X-Custom-Header', 'wish-status-line-was-shown');

@@ -50,7 +50,7 @@ class StreamTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    public function testGetStreamContentsFromAbritraryPosition()
+    public function testGetStreamContentsFromArbitraryPosition()
     {
         $this->assertEquals(6, $this->stream->write('foobar'));
         $this->stream->seek(3);
