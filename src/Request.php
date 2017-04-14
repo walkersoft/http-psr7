@@ -219,6 +219,9 @@ class Request extends Message implements RequestInterface
     {
         $clone = clone $this;
 
+        $hostHeader = $this->getHeader('Host');
+        $uriHost = $uri->getHost();
+
         if ($preserveHost)
         {
             /*
@@ -226,8 +229,9 @@ class Request extends Message implements RequestInterface
              * Also applies if there isn't a host header and the new URI doesn't
              * contain a host either
              */
-            if(($this->hasHeader('Host') && !empty($this->getHeader('Host')))
-               || (!$this->hasHeader('Host') && empty($uri->getHost()))
+
+            if(($this->hasHeader('Host') && !empty($hostHeader))
+               || (!$this->hasHeader('Host') && empty($uriHost))
             )
             {
                 $clone->requestUri = $uri;
@@ -235,7 +239,7 @@ class Request extends Message implements RequestInterface
             }
         }
 
-        if(!empty($uri->getHost()))
+        if(!empty($uriHost))
         {
             $clone = $clone->withoutHeader('Host')->withHeader('Host', [$uri->getHost()]);
         }
