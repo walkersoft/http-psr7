@@ -92,7 +92,9 @@ class Request extends Message implements RequestInterface
         }
 
         $request = $this->requestUri->getPath();
-        if (!empty($this->requestUri->getQuery()))
+        $query = $this->requestUri->getQuery();
+
+        if (!empty($query))
         {
             $request .= sprintf('?%s', $this->requestUri->getQuery());
         }
